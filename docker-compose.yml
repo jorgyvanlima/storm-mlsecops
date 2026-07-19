@@ -57,8 +57,10 @@ services:
         condition: service_completed_successfully
     # Backend bridges the public host network and internal service network
     networks:
-      - storm_public_network
-      - storm_internal_network
+      storm_public_network:
+        aliases:
+          - storm-backend
+      storm_internal_network: {}
     restart: unless-stopped
 
   iot-simulator:
