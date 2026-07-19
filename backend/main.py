@@ -97,6 +97,33 @@ def startup_event():
     app.state.loop = asyncio.get_running_loop()
     add_log("Carregando artefatos de IA do volume compartilhado...", "STARTUP")
     
+    # Initialize realtime_telemetry table
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS realtime_telemetry (
+                id SERIAL PRIMARY KEY,
+                city_name VARCHAR(100) NOT NULL,
+                temperature NUMERIC(5,2) NOT NULL,
+                humidity INT NOT NULL,
+                pressure NUMERIC(6,2) NOT NULL,
+                weather_description VARCHAR(255),
+                precipitation_1h NUMERIC(5,2) DEFAULT 0.0,
+                captured_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_realtime_city ON realtime_telemetry(city_name);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_realtime_captured_at ON realtime_telemetry(captured_at DESC);")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        add_log("Tabela 'realtime_telemetry' inicializada com sucesso.", "DB")
+    except Exception as e:
+        logger.error(f"[-] Falha ao inicializar tabela realtime_telemetry: {e}")
+        add_log(f"Falha ao inicializar tabela realtime_telemetry: {e}", "ERROR")
+
+    
     # Retry model loading a few times in case the trainer is still writing
     retries = 15
     import time
@@ -415,3 +442,8 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket execution error: {e}")
         manager.disconnect(websocket)
+
+# Register realtime router
+from main_realtime import router_realtime
+app.include_router(router_realtime)
+

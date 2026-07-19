@@ -216,13 +216,22 @@ function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* Toggle View Button */}
             {view === 'tcc' ? (
-              <button 
-                onClick={() => setView('dashboard')} 
-                className="btn-launch-dashboard"
-              >
-                <span>Acessar Painel Prático</span>
-                <ArrowRight size={18} />
-              </button>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  onClick={() => setView('dashboard')} 
+                  className="btn-launch-dashboard"
+                >
+                  <span>Acessar Painel Prático</span>
+                  <ArrowRight size={18} />
+                </button>
+                <a 
+                  href="/realtime.html" 
+                  className="btn-launch-real"
+                >
+                  <span>Acessar Painel Real</span>
+                  <ArrowRight size={18} />
+                </a>
+              </div>
             ) : (
               <>
                 <a 

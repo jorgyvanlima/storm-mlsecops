@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STORM - Monitoramento Climatológico Tempo Real</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glow {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+        }
+        .glow-hover:hover {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.35);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Topbar/Header -->
+    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 py-4 px-6 glow mb-6 sticky top-0 z-50">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                <i class="fa-solid fa-satellite-dish text-blue-500 text-3xl animate-pulse"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-blue-400">STORM REAL-TIME</h1>
+                    <p class="text-xs text-slate-400">Monitoramento Ativo das Cidades do Estado do Pará</p>
+                </div>
+            </div>
+            
+            <!-- Botões de Navegação -->
+            <div class="flex flex-wrap gap-3">
+                <a href="index.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-house"></i> Painel Principal
+                </a>
+                <a href="https://github.com/jorgyvanlima/storm-mlsecops" target="_blank" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-brands fa-github text-lg"></i> Meu GitHub
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 flex-grow">
+        
+        <!-- Bloco Informativo de Conexão Segura -->
+        <div class="bg-blue-950/30 border border-blue-900/50 rounded-xl p-4 mb-6 flex items-start gap-4 backdrop-blur-sm">
+            <i class="fa-solid fa-shield-halved text-blue-400 text-2xl mt-1"></i>
+            <div>
+                <h3 class="font-semibold text-blue-300">Conexão Segura Estreitada (OpenWeatherMap API via HTTPS)</h3>
+                <p class="text-sm text-slate-300 mt-1">
+                    Os dados abaixo são capturados em tempo real de forma segura. Todas as requisições passam pelo módulo de sanitização matemática no backend STORM para repelir eventuais ataques de <strong>Data Poisoning (ML02)</strong> na telemetria.
+                </p>
+            </div>
+        </div>
+
+        <!-- Seção de Ação Manual -->
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-lg font-bold text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-tower-broadcast text-blue-400"></i> Últimas Leituras
+            </h2>
+            <button onclick="triggerDataCapture()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all duration-300 flex items-center gap-2 hover:scale-105 shadow-md shadow-emerald-900/30">
+                <i class="fa-solid fa-sync"></i> Forçar Captura Atualizada
+            </button>
+        </div>
+
+        <!-- Cards das Cidades do Pará -->
+        <div id="cities-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="animate-pulse bg-slate-800 h-40 rounded-xl border border-slate-700"></div>
+            <div class="animate-pulse bg-slate-800 h-40 rounded-xl border border-slate-700"></div>
+            <div class="animate-pulse bg-slate-800 h-40 rounded-xl border border-slate-700"></div>
+        </div>
+
+        <!-- Grid de Gráficos e Projeções -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <!-- Gráfico de Comparação de Temperaturas -->
+            <div class="glass-card p-6 rounded-xl">
+                <h3 class="font-bold text-slate-300 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-blue-400"></i> Comparativo Térmico Instantâneo (°C)
+                </h3>
+                <div class="w-full h-64 relative">
+                    <canvas id="tempChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Projeções Climatológicas para 2026 -->
+            <div class="glass-card p-6 rounded-xl">
+                <h3 class="font-bold text-slate-300 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-days text-blue-400"></i> Projeção Climatológica para 2026 (Análise TCC)
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="text-xs uppercase bg-slate-800 text-blue-400">
+                            <tr>
+                                <th class="px-4 py-3 rounded-l-lg">Cidade</th>
+                                <th class="px-4 py-3">Média Projetada 2026</th>
+                                <th class="px-4 py-3 rounded-r-lg">Risco Estimado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projection-table-body" class="divide-y divide-slate-800">
+                            <!-- Injetado dinamicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bg-slate-900 border-t border-slate-800 text-center py-6 text-sm text-slate-400 mt-auto">
+        <p>© 2026 STORM-MLSecOps. Desenvolvido por Jorgyvan Lima para o TCC da Pós-Graduação em Cibersegurança.</p>
+    </footer>
+
+    <!-- Lógica de Integração Dinâmica do Frontend -->
+    <script>
+        const API_URL = "/api/realtime";
+
+        async function triggerDataCapture() {
+            try {
+                const response = await fetch(`${API_URL}/capture`, { method: 'POST' });
+                if (response.ok) {
+                    alert('Telemetria capturada com sucesso do OpenWeatherMap!');
+                    loadDashboard();
+                } else {
+                    alert('Falha ao acionar a captura no backend.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro de comunicação com o backend.');
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                // Carregar dados de telemetria mais recentes
+                const resDashboard = await fetch(`${API_URL}/dashboard`);
+                const data = await resDashboard.json();
+                
+                const container = document.getElementById('cities-container');
+                container.innerHTML = '';
+                
+                const labels = [];
+                const temps = [];
+
+                if (data.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-8 text-slate-400">
+                            Nenhum dado capturado ainda. Clique em "Forçar Captura Atualizada" acima.
+                        </div>
+                    `;
+                }
+
+                data.forEach(city => {
+                    labels.push(city.city_name);
+                    temps.push(city.temperature);
+
+                    const alertColor = city.precipitation_1h > 10 ? 'text-red-500' : 'text-emerald-400';
+                    const icon = city.precipitation_1h > 10 ? 'fa-cloud-showers-heavy' : 'fa-cloud-sun';
+
+                    container.innerHTML += `
+                        <div class="glass-card p-5 rounded-xl hover:border-blue-500 transition-all duration-300 glow-hover">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 class="font-bold text-lg text-blue-300">${city.city_name}</h3>
+                                    <span class="text-xs text-slate-400">Capturado em: ${new Date(city.captured_at).toLocaleTimeString()}</span>
+                                </div>
+                                <i class="fa-solid ${icon} ${alertColor} text-3xl"></i>
+                            </div>
+                            <p class="text-sm text-slate-400 capitalize mb-3">${city.weather_description}</p>
+                            <div class="grid grid-cols-3 gap-2 mt-2 text-center">
+                                <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50">
+                                    <span class="block text-xs text-slate-400">Temp</span>
+                                    <span class="font-bold text-slate-100">${city.temperature.toFixed(1)}°C</span>
+                                </div>
+                                <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50">
+                                    <span class="block text-xs text-slate-400">Umidade</span>
+                                    <span class="font-bold text-slate-100">${city.humidity}%</span>
+                                </div>
+                                <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50">
+                                    <span class="block text-xs text-slate-400">Pressão</span>
+                                    <span class="font-bold text-slate-100">${Math.round(city.pressure)} hPa</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // Renderizar o gráfico comparativo
+                renderChart(labels, temps);
+
+                // Carregar projeções de 2026
+                const resProj = await fetch(`${API_URL}/projections-2026`);
+                const projections = await resProj.json();
+                const tableBody = document.getElementById('projection-table-body');
+                tableBody.innerHTML = '';
+                
+                projections.forEach(p => {
+                    const alertBadge = p.alert_level.includes('Crítico') || p.alert_level.includes('Alerta') 
+                        ? 'bg-red-950/60 text-red-400 border border-red-800/50' 
+                        : 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/50';
+
+                    tableBody.innerHTML += `
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="px-4 py-3 font-semibold text-slate-100">${p.city_name}</td>
+                            <td class="px-4 py-3 text-blue-300 font-mono">${p.temp_projected_2026.toFixed(1)}°C</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded text-xs font-bold ${alertBadge}">${p.alert_level}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+            } catch (err) {
+                console.error("Dashboard Loading Error:", err);
+            }
+        }
+
+        let chartInstance = null;
+        function renderChart(labels, temps) {
+            const canvas = document.getElementById('tempChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temperatura Atual (°C)',
+                        data: temps,
+                        backgroundColor: 'rgba(59, 130, 246, 0.4)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Inicialização automática do painel de telemetria real-time
+        window.onload = loadDashboard;
+    </script>
+</body>
+</html>
