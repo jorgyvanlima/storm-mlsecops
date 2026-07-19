@@ -161,6 +161,24 @@ def startup_event():
     except Exception as e:
         add_log(f"Falha ao conectar no Broker MQTT: {e}", "ERROR")
 
+    # Iniciar loop de captura automática (30 em 30 min)
+    from main_realtime import capture_realtime_weather
+    async def auto_capture_loop():
+        # Aguarda 10 segundos antes da primeira execução para garantir que tudo subiu
+        await asyncio.sleep(10)
+        while True:
+            try:
+                add_log("Iniciando captura automática da API OpenWeatherMap (30 min loop)...", "SYSTEM")
+                await capture_realtime_weather()
+                add_log("Captura automática concluída com sucesso.", "SYSTEM")
+            except Exception as e:
+                logger.error(f"Erro na captura automatica: {e}")
+            
+            # Pausa de 30 minutos (1800 segundos)
+            await asyncio.sleep(1800)
+            
+    app.state.loop.create_task(auto_capture_loop())
+
 @app.on_event("shutdown")
 def shutdown_event():
     if hasattr(app.state, "mqtt"):

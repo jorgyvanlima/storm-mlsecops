@@ -48,6 +48,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://storm_admin:${DB_SECURE_PASSWORD}@db:5432/storm_db
       - MQTT_HOST=broker
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
     volumes:
       - shared_model:/shared:ro # MLSECOPS CONTROL: Shared read-only for protection
     depends_on:

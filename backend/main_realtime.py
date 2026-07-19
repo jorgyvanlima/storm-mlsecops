@@ -158,3 +158,38 @@ async def get_2026_projections():
         {"city_name": "Parauapebas", "temp_projected_2026": 34.9, "alert_level": "Normal"}
     ]
     return projections
+
+@router_realtime.get("/raw-data")
+async def get_raw_data():
+    """
+    Retorna os últimos dados brutos inseridos no banco.
+    """
+    from main import get_db_connection
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = """
+        SELECT id, city_name, temperature, humidity, pressure, weather_description, precipitation_1h, captured_at
+        FROM realtime_telemetry
+        ORDER BY captured_at DESC
+        LIMIT 50;
+    """
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    data = []
+    for r in rows:
+        data.append({
+            "id": r[0],
+            "city_name": r[1],
+            "temperature": float(r[2]),
+            "humidity": r[3],
+            "pressure": float(r[4]),
+            "weather_description": r[5],
+            "precipitation_1h": float(r[6]),
+            "captured_at": r[7].isoformat()
+        })
+        
+    return data
