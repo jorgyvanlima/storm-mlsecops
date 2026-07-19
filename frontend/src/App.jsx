@@ -13,7 +13,9 @@ import {
   ArrowRight,
   FileText,
   Cpu,
-  LogOut
+  LogOut,
+  Github,
+  ExternalLink
 } from 'lucide-react';
 
 function App() {
@@ -194,8 +196,8 @@ function App() {
 
   return (
     <>
-      {/* Background lightning simulation layer */}
-      <div className={`lightning-bg ${isStorming ? 'lightning-storm-active' : ''}`} />
+      {/* Background lightning simulation layer (disabled to prevent screen flashing) */}
+      {/* <div className={`lightning-bg ${isStorming ? 'lightning-storm-active' : ''}`} /> */}
       
       <div className="app-container">
         
@@ -222,14 +224,26 @@ function App() {
                 <ArrowRight size={18} />
               </button>
             ) : (
-              <button 
-                onClick={() => setView('tcc')} 
-                className="control-btn"
-                style={{ width: 'auto', padding: '10px 20px', background: 'rgba(168, 85, 247, 0.15)', borderColor: 'rgba(168, 85, 247, 0.4)', color: '#fff' }}
-              >
-                <BookOpen size={16} />
-                <span>Voltar para o TCC</span>
-              </button>
+              <>
+                <a 
+                  href="https://github.com/jorgyvanlima/storm-mlsecops"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="control-btn btn-github"
+                  style={{ width: 'auto', padding: '10px 20px', textDecoration: 'none' }}
+                >
+                  <Github size={16} />
+                  <span>GitHub</span>
+                </a>
+                <button 
+                  onClick={() => setView('tcc')} 
+                  className="control-btn"
+                  style={{ width: 'auto', padding: '10px 20px', background: 'rgba(168, 85, 247, 0.15)', borderColor: 'rgba(168, 85, 247, 0.4)', color: '#fff' }}
+                >
+                  <BookOpen size={16} />
+                  <span>Voltar para o TCC</span>
+                </button>
+              </>
             )}
 
             {/* Connection Status */}
@@ -619,7 +633,7 @@ function App() {
                     <li className="academic-li">EVANS, Sarah; SHOROV, Andrey; SOYKAN, Elif Ustundag; SHAMMARY, Bahaulddin. <em>Visualizing Secure MLOps (MLSecOps): A Practical Guide for Building Robust AI/ML Pipeline Security.</em> Open Source Security Foundation (OpenSSF) Whitepaper, 2025. Disponível em: <a href="https://openssf.org/" target="_blank" rel="noopener noreferrer" style={{ color: '#06b6d4' }}>https://openssf.org/</a>.</li>
                     <li className="academic-li">GARCIA, Vinicius Cardoso. <em>Machine Learning Operations (MLOps): Um Guia para a Construção de Arquiteturas de Software Otimizadas.</em> Recife, 2023.</li>
                     <li className="academic-li">KREUZBERGER, Dominik; KÜHL, Niklas; HIRSCHL, Sebastian. <em>Machine Learning Operations (MLOps): Overview, Definition, and Architecture.</em> arXiv preprint arXiv:2205.02302, 2022. Disponível em: <a href="https://arxiv.org/abs/2205.02302" target="_blank" rel="noopener noreferrer" style={{ color: '#06b6d4' }}>https://arxiv.org/abs/2205.02302</a>.</li>
-                    <li className="academic-li">LIMA, Jorgyvan Braga. <em>STORM: Sistema Inteligente de Telemetria Climática e Alerta de Alagamento para Belém-PA.</em> Repositório GitHub, 2026. Disponível em: <a href="https://github.com/jorgyvanlima/storm" target="_blank" rel="noopener noreferrer" style={{ color: '#06b6d4' }}>https://github.com/jorgyvanlima/storm</a>.</li>
+                    <li className="academic-li">LIMA, Jorgyvan Braga. <em>STORM-MLSecOps: Framework de Segurança de Ponta a Ponta para Sistemas Inteligentes de Telemetria Climática e Alerta de Alagamento em Belém-PA.</em> Repositório GitHub, 2026. Disponível em: <a href="https://github.com/jorgyvanlima/storm-mlsecops" target="_blank" rel="noopener noreferrer" style={{ color: '#06b6d4' }}>https://github.com/jorgyvanlima/storm-mlsecops</a>.</li>
                     <li className="academic-li">OLGA, Arthur Quintella de Mello; MONTEIRO, Gabriel Lopes; LEITE, Guilherme Peres; LIMA, Vinicius Gomes de. <em>MLOps - Transformando Teoria em Prática.</em> São Paulo: Insper, Relatório Final de Projeto Final de Engenharia (Trabalho de Conclusão de Curso), 2021.</li>
                     <li className="academic-li">RUN:AI. <em>Complete Guide to MLOps: Why is MLOps Important? Closing the Loop with Machine Learning Operations.</em> Run:ai, [s.d.]. Disponível em: <a href="https://www.run.ai/" target="_blank" rel="noopener noreferrer" style={{ color: '#06b6d4' }}>https://www.run.ai/</a>.</li>
                     <li className="academic-li">SANTANDREA, Alan Souza. <em>MLOps: introdução ao tema e estudo de caso.</em> Ouro Preto: Escola de Minas, Universidade Federal de Ouro Preto, Monografia de Graduação em Engenharia de Controle e Automação, 2022.</li>
@@ -667,6 +681,19 @@ function App() {
                   >
                     ⚡ Tempestade Extrema
                   </button>
+                </div>
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <a 
+                    href="https://github.com/jorgyvanlima/storm-mlsecops"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="control-btn btn-github"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <Github size={16} />
+                    <span>Código Fonte no GitHub</span>
+                    <ExternalLink size={14} style={{ opacity: 0.6, marginLeft: 'auto' }} />
+                  </a>
                 </div>
               </div>
 
