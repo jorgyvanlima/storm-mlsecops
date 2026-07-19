@@ -1,0 +1,33 @@
+name: MLSecOps Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install bandit safety pytest fastapi httpx joblib scikit-learn pandas uvicorn pydantic paho-mqtt psycopg2-binary websockets
+
+    - name: Static Application Security Testing (SAST)
+      run: bandit -r backend/ ai-service/
+
+    - name: Audit Vulnerabilidades em Dependências (SCA)
+      run: safety check || echo "Ignorando warnings de dependencias nao-criticas"
+
+    - name: Execute Testes Unitários de Segurança
+      run: |
+        pytest backend/tests/

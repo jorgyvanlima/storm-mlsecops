@@ -1,0 +1,21 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.dvc/cache/
+.dvc/tmp/
+.dvc/config.local
+
+# ML Models & Data
+ai-service/data/weather_belem.csv
+shared/
+
+# Node.js
+node_modules/
+dist/
+build/
+.eslintcache
+.DS_Store
+

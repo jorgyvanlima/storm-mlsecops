@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: storm_mlsecops_db
+    environment:
+      POSTGRES_DB: storm_mlsecops_db
+      POSTGRES_USER: storm_admin
+      POSTGRES_PASSWORD: ${DB_SECURE_PASSWORD}
+    volumes:
+      - storm_mlsecops_pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - storm_mlsecops_internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U storm_admin -d storm_mlsecops_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  broker:
+    image: eclipse-mosquitto:2
+    container_name: storm_mlsecops_broker
+    volumes:
+      - ./broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    # MLSECOPS CONTROL: Internal network, no host port exposure to avoid conflict on 1883
+    networks:
+      - storm_mlsecops_internal_network
+    restart: unless-stopped
+
+  ai-service:
+    build: ./ai-service
+    container_name: storm_mlsecops_ai_service
+    volumes:
+      - storm_mlsecops_shared_model:/shared
+    networks:
+      - storm_mlsecops_internal_network
+
+  storm-backend:
+    build: ./backend
+    container_name: storm_mlsecops_backend
+    environment:
+      - DATABASE_URL=postgresql://storm_admin:${DB_SECURE_PASSWORD}@db:5432/storm_mlsecops_db
+      - MQTT_HOST=broker
+    volumes:
+      - storm_mlsecops_shared_model:/shared:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      ai-service:
+        condition: service_completed_successfully
+    networks:
+      - storm_mlsecops_public_network
+      - storm_mlsecops_internal_network
+    restart: unless-stopped
+
+  iot-simulator:
+    build: ./iot-simulator
+    container_name: storm_mlsecops_iot_simulator
+    environment:
+      - MQTT_BROKER=broker
+      - MQTT_PORT=1883
+    depends_on:
+      - broker
+      - storm-backend
+    networks:
+      - storm_mlsecops_internal_network
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: storm_mlsecops_frontend
+    depends_on:
+      - storm-backend
+    networks:
+      - storm_mlsecops_public_network
+      - mcorecloud-network # Connect to external proxy network
+    restart: unless-stopped
+
+
+volumes:
+  storm_mlsecops_pgdata:
+  storm_mlsecops_shared_model:
+
+networks:
+  storm_mlsecops_public_network:
+    driver: bridge
+  storm_mlsecops_internal_network:
+    driver: bridge
+    internal: true
+  mcorecloud-network:
+    external: true

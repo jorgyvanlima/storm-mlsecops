@@ -1,0 +1,15 @@
+stages:
+  generate_data:
+    cmd: python3 ai-service/generate_data.py
+    deps:
+      - ai-service/generate_data.py
+    outs:
+      - ai-service/data/weather_belem.csv
+  train:
+    cmd: MODEL_OUTPUT_DIR=shared python3 ai-service/train.py
+    deps:
+      - ai-service/train.py
+      - ai-service/data/weather_belem.csv
+    outs:
+      - shared/model.pkl
+      - shared/scaler.pkl

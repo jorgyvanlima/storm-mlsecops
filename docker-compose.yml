@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: storm_db
+    environment:
+      POSTGRES_DB: storm_db
+      POSTGRES_USER: storm_admin
+      POSTGRES_PASSWORD: ${DB_SECURE_PASSWORD} # Loaded from .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    # MLSECOPS CONTROL: Purely internal network isolation for the database
+    networks:
+      - storm_internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U storm_admin -d storm_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  broker:
+    image: eclipse-mosquitto:2
+    container_name: storm_broker
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    # MLSECOPS CONTROL: Internal network for MQTT broker
+    networks:
+      - storm_internal_network
+    restart: unless-stopped
+
+  ai-service:
+    build: ./ai-service
+    container_name: storm_ai_service
+    volumes:
+      - shared_model:/shared
+    networks:
+      - storm_internal_network
+
+  backend:
+    build: ./backend
+    container_name: storm_backend
+    # MLSECOPS CONTROL: Backend does not expose host ports directly (access is proxied via frontend)
+    environment:
+      - DATABASE_URL=postgresql://storm_admin:${DB_SECURE_PASSWORD}@db:5432/storm_db
+      - MQTT_HOST=broker
+    volumes:
+      - shared_model:/shared:ro # MLSECOPS CONTROL: Shared read-only for protection
+    depends_on:
+      db:
+        condition: service_healthy
+      ai-service:
+        condition: service_completed_successfully
+    # Backend bridges the public host network and internal service network
+    networks:
+      - storm_public_network
+      - storm_internal_network
+    restart: unless-stopped
+
+  iot-simulator:
+    build: ./iot-simulator
+    container_name: storm_iot_simulator
+    environment:
+      - MQTT_BROKER=broker
+      - MQTT_PORT=1883
+    depends_on:
+      - broker
+      - backend
+    networks:
+      - storm_internal_network
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: storm_frontend
+    ports:
+      - "8081:8080" # Exposed on port 8081 to avoid collision with backend on 8080
+    depends_on:
+      - backend
+    networks:
+      - storm_public_network
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  shared_model:
+
+networks:
+  storm_public_network:
+    driver: bridge
+  storm_internal_network:
+    driver: bridge
+    internal: true # MLSECOPS CONTROL: Purely private internal network
