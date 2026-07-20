@@ -362,6 +362,10 @@ function App() {
                       <div className="academic-meta-val">Jorgyvan Braga Lima</div>
                     </div>
                     <div className="academic-meta-item">
+                      <div className="academic-meta-label">Orientador</div>
+                      <div className="academic-meta-val">Prof. Dr. André Figueira Riker</div>
+                    </div>
+                    <div className="academic-meta-item">
                       <div className="academic-meta-label">Data de Defesa</div>
                       <div className="academic-meta-val">Julho de 2026</div>
                     </div>

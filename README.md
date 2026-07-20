@@ -5,7 +5,7 @@
 **Trabalho de Conclusão de Curso (TCC)**
 
 **Autor:** Jorgyvan Braga Lima
-**Orientador:** Prof. Dr. [Nome do Orientador]
+**Orientador:** Prof. Dr. André Figueira Riker
 **Local e Data:** Belém-PA, Julho de 2026
 
 ---
