@@ -431,7 +431,7 @@ O objetivo geral deste trabalho é propor, implementar e avaliar a arquitetura d
                     <li className="academic-li">Realizar a modelagem de ameaças utilizando o framework STRIDE adaptado para machine learning sobre a arquitetura conteinerizada do STORM.</li>
                     <li className="academic-li">Implementar salvaguardas técnicas contra <em>Data Poisoning</em> (Envenenamento de Dados) e <em>Evasion Attacks</em> (Evasão Adversarial) na telemetria climática.</li>
                     <li className="academic-li">Desenvolver e contrapor <strong>dois estudos de caso práticos</strong>: um modelo simulado de agrupamento para bairros de Belém e um modelo real de coleta meteorológica para cidades do Pará (Castanhal, Bragança, Salinas, Belém, Marabá, Parauapebas) via API OpenWeatherMap.</li>
-                    <li className="academic-li">Consolidar a reprodutibilidade e rastreabilidade por meio de versionamento de código, dados e modelos usando o DVC (<em>Data Version Control</em>) integrado à nuvem IBM Cloud Object Storage (COS).</li>
+                    <li className="academic-li">Consolidar a reprodutibilidade e rastreabilidade por meio de versionamento de código, dados e modelos usando o DVC (<em>Data Version Control</em>) integrado à VPS HostGator.</li>
                     <li className="academic-li">Desenvolver e validar o mecanismo automático de fallback <em>Fail-Safe Inference Mode</em> para garantia de alta disponibilidade sob falha sistêmica do modelo preditivo.</li>
                   </ol>
                 </div>
@@ -553,7 +553,7 @@ O modo Fail-Safe funciona como o coração da disponibilidade. Na ausência de r
                   <h2 className="academic-heading-1">5. IMPLEMENTAÇÃO DO PIPELINE DE SEGURANÇA E CI/CD/CT</h2>
                   <h3 className="academic-heading-2">5.1. Versionamento Criptográfico e Reprodutibilidade com DVC</h3>
                   <p className="academic-p">
-Diferente do versionamento de código estático feito pelo Git, o STORM-MLSecOps utiliza o <strong>DVC (Data Version Control)</strong> para gerenciar o versionamento de grandes datasets e modelos serializados climáticos. O DVC opera acoplado ao Git: enquanto o Git rastreia arquivos de ponteiros pequenos <code>.dvc</code> (contendo o hash de proveniência criptográfico SHA256 correspondente), o arquivo volumoso é versionado criptograficamente e salvo na nuvem da <strong>IBM Cloud Object Storage (COS)</strong>.
+Diferente do versionamento de código estático feito pelo Git, o STORM-MLSecOps utiliza o <strong>DVC (Data Version Control)</strong> para gerenciar o versionamento de grandes datasets e modelos serializados climáticos. O DVC opera acoplado ao Git: enquanto o Git rastreia arquivos de ponteiros pequenos <code>.dvc</code> (contendo o hash de proveniência criptográfico SHA256 correspondente), o arquivo volumoso é versionado criptograficamente e salvo internamente na <strong>VPS HostGator</strong>.
                   </p>
 
                   <h3 className="academic-heading-2">5.2. Integração e Entrega Contínuas Seguras via GitHub Actions e CML</h3>

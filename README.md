@@ -78,7 +78,7 @@ O objetivo geral deste trabalho é propor, implementar e avaliar a arquitetura d
 1. Realizar a modelagem de ameaças utilizando o framework STRIDE adaptado para machine learning sobre a arquitetura conteinerizada do STORM.
 2. Implementar salvaguardas técnicas contra *Data Poisoning* (Envenenamento de Dados) e *Evasion Attacks* (Evasão Adversarial) na telemetria climática.
 3. Desenvolver e contrapor **dois estudos de caso práticos**: um modelo simulado de agrupamento para bairros de Belém e um modelo real de coleta meteorológica para cidades do Pará (Castanhal, Bragança, Salinas, Belém, Marabá, Parauapebas) via API OpenWeatherMap.
-4. Consolidar a reprodutibilidade e rastreabilidade por meio de versionamento de código, dados e modelos usando o DVC (*Data Version Control*) integrado à nuvem IBM Cloud Object Storage (COS).
+4. Consolidar a reprodutibilidade e rastreabilidade por meio de versionamento de código, dados e modelos usando o DVC (*Data Version Control*) integrado à VPS HostGator.
 5. Desenvolver e validar o mecanismo automático de fallback *Fail-Safe Inference Mode* para garantia de alta disponibilidade sob falha sistêmica do modelo preditivo.
 
 ---
@@ -239,7 +239,7 @@ A aplicação sistemática do STRIDE para o STORM-MLSecOps revela cenários que 
 *   **Spoofing (Identidade):** Um sensor climático invasor pirata pode forjar a identidade de um microcontrolador IoT de Belém e enviar falsos picos de precipitação para acionar alarmes espúrios de evacuação civil.
     *   *Mitigação STORM-MLSecOps:* Autenticação criptográfica no Broker MQTT com credenciais exclusivas armazenadas em cofres locais do Docker Secrets.
 *   **Tampering (Adulteração):** Um atacante intercepta as mensagens climáticas no MQTT ou envenena o gerador de dados sintéticos do `ai-service` com valores climáticos espúrios para enviesar os centroides do K-Means (*Data Poisoning* / ML02).
-    *   *Mitigação STORM-MLSecOps:* Higienização matemática estrita e descarte lógico de outliers nos validadores de dados na ingestão, além de hashes MD5/SHA256 gerados pelo DVC no armazenamento IBM Cloud Object Storage.
+    *   *Mitigação STORM-MLSecOps:* Higienização matemática estrita e descarte lógico de outliers nos validadores de dados na ingestão, além de hashes MD5/SHA256 gerados pelo DVC no armazenamento da VPS HostGator.
 *   **Repudiation (Não repúdio):** Impossibilidade de rastrear modificações de código ou atualizações inadequadas do classificador.
     *   *Mitigação STORM-MLSecOps:* Geração de logs permanentes no formato estruturado (JSON) com proveniência criptográfica auditável baseada nos hashes de commits do Git e DVC.
 *   **Information Disclosure (Vazamento de Informação):** Exposição inadequada de credenciais de bancos de dados ou telemetria climática de áreas urbanas críticas.
@@ -254,7 +254,7 @@ A aplicação sistemática do STRIDE para o STORM-MLSecOps revela cenários que 
 ## 5. IMPLEMENTAÇÃO DO PIPELINE DE SEGURANÇA E CI/CD/CT
 
 ### 5.1. Versionamento Criptográfico e Reprodutibilidade com DVC
-Diferente do versionamento de código estático feito pelo Git, o STORM-MLSecOps utiliza o **DVC (Data Version Control)** para gerenciar o versionamento de grandes datasets e modelos serializados climáticos. O DVC opera acoplado ao Git: enquanto o Git rastreia arquivos de ponteiros pequenos `.dvc` (contendo o hash de proveniência criptográfico SHA256 correspondente), o arquivo volumoso é versionado criptograficamente e salvo na nuvem da **IBM Cloud Object Storage (COS)**.
+Diferente do versionamento de código estático feito pelo Git, o STORM-MLSecOps utiliza o **DVC (Data Version Control)** para gerenciar o versionamento de grandes datasets e modelos serializados climáticos. O DVC opera acoplado ao Git: enquanto o Git rastreia arquivos de ponteiros pequenos `.dvc` (contendo o hash de proveniência criptográfico SHA256 correspondente), o arquivo volumoso é versionado criptograficamente e salvo internamente na **VPS HostGator**.
 
 O pipeline experimental de machine learning é formalizado por meio do arquivo declarativo `dvc.yaml` que orquestra as seguintes fases sequenciais:
 *   `preprocess`: Ingestão, validação de tipos físicos e normalização estatística usando scripts Python.
