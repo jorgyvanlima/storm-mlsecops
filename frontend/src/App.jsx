@@ -196,12 +196,12 @@ function App() {
 
   return (
     <>
-      {/* Background lightning simulation layer (disabled to prevent screen flashing) <strong>/}
-      {/</strong> <div className={`lightning-bg ${isStorming ? 'lightning-storm-active' : ''}`} /> <strong>/}
+      {/* Background lightning simulation layer (disabled to prevent screen flashing) */}
+      {/* <div className={`lightning-bg ${isStorming ? 'lightning-storm-active' : ''}`} /> */}
       
       <div className="app-container">
         
-        {/</strong> Dynamic Storm-Themed Header <strong>/}
+        {/* Dynamic Storm-Themed Header */}
         <header className="app-header">
           <div className="header-title-container">
             <span className="header-logo">⚡</span>
@@ -214,7 +214,7 @@ function App() {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {/</strong> Toggle View Button <strong>/}
+            {/* Toggle View Button */}
             {view === 'tcc' ? (
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button 
@@ -255,7 +255,7 @@ function App() {
               </>
             )}
 
-            {/</strong> Connection Status <strong>/}
+            {/* Connection Status */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#cbd5e1' }}>
               <span style={{
                 display: 'inline-block',
@@ -268,7 +268,7 @@ function App() {
               <span>{isConnected ? 'Servidor Conectado' : 'Conectando...'}</span>
             </div>
 
-            {/</strong> Global IA Status <strong>/}
+            {/* Global IA Status */}
             {telemetry && (
               <span className={`status-badge ${getBadgeClass(telemetry.risk_level)}`}>
                 {isStorming ? <CloudLightning size={16} /> : <ShieldCheck size={16} />}
@@ -278,11 +278,11 @@ function App() {
           </div>
         </header>
 
-        {/</strong> Chaveamento de Visualização: TCC ou Dashboard <strong>/}
+        {/* Chaveamento de Visualização: TCC ou Dashboard */}
         {view === 'tcc' ? (
           <div className="tcc-layout">
             
-            {/</strong> Sidebar de Navegação do TCC <strong>/}
+            {/* Sidebar de Navegação do TCC */}
             <aside className="tcc-sidebar">
               <div style={{ padding: '10px 8px', fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Sumário e Capítulos
@@ -341,7 +341,7 @@ function App() {
               </div>
             </aside>
 
-            {/</strong> Painel de Conteúdo de Leitura do TCC <strong>/}
+            {/* Painel de Conteúdo de Leitura do TCC */}
             <main className="tcc-content-pane">
 
               {tccSection === 'resumo' && (
@@ -373,7 +373,7 @@ function App() {
 
                   <h3 className="academic-heading-1">RESUMO</h3>
                   <p className="academic-p">
-O aumento exponencial no volume de dados climáticos gerados por dispositivos de Internet das Coisas (IoT) tem impulsionado a adoção de modelos de Aprendizado de Máquina (Machine Learning - ML) para predição e mitigação de desastres socioambientais, tais como alagamentos urbanos. No entanto, a incorporação de inteligência artificial em sistemas de controle crítico expande significativamente a superfície de ataque, introduzindo vulnerabilidades específicas como envenenamento de dados (</strong>data poisoning*), manipulação adversarial na inferência e ataques à cadeia de suprimentos de software.
+O aumento exponencial no volume de dados climáticos gerados por dispositivos de Internet das Coisas (IoT) tem impulsionado a adoção de modelos de Aprendizado de Máquina (Machine Learning - ML) para predição e mitigação de desastres socioambientais, tais como alagamentos urbanos. No entanto, a incorporação de inteligência artificial em sistemas de controle crítico expande significativamente a superfície de ataque, introduzindo vulnerabilidades específicas como envenenamento de dados (<strong>data poisoning</strong>), manipulação adversarial na inferência e ataques à cadeia de suprimentos de software.
                   </p>
                   <p className="academic-p">
 Este trabalho apresenta o <strong>STORM-MLSecOps (v3)</strong>, uma evolução profunda e individual do sistema STORM original (anteriormente projetado em grupo) para um ecossistema <strong>hardened</strong> baseado nos princípios de <strong>MLSecOps</strong> (Machine Learning Security Operations). O sistema está estruturado em torno de <strong>dois modelos de estudo de caso complementares</strong>: um modelo simulado de telemetria climática que utiliza o algoritmo não supervisionado <strong>K-Means</strong> do <strong>scikit-learn</strong> para classificação de riscos de alagamento por bairros históricos de Belém-PA (Doca de Souza Franco, Cidade Velha, Jurunas, Umarizal, Batista Campos e Marco); e um modelo prático real baseado na captura contínua e persistência de telemetria climática em tempo real para seis cidades do estado do Pará (Castanhal, Bragança, Salinas, Belém, Marabá e Parauapebas) via API segura (HTTPS) do OpenWeatherMap com persistência parametrizada em PostgreSQL.
@@ -526,7 +526,7 @@ O segundo modelo consolida o monitoramento real em tempo real das condições at
                     <li className="academic-li"><strong>Repudiation (Não repúdio):</strong> <strong>Mitigação:</strong> Geração de logs estruturados com proveniência criptográfica rastreável.</li>
                     <li className="academic-li"><strong>Information Disclosure (Vazamento):</strong> <strong>Mitigação:</strong> Isolamento de rede do contêiner db.</li>
                     <li className="academic-li"><strong>Denial of Service (Indisponibilidade):</strong> <strong>Mitigação:</strong> Limites rígidos de CPU/Memória por contêiner e <strong>Fail-Safe Inference Mode</strong>.</li>
-                    <li className="academic-li"><strong>Elevation of Privilege:</strong> <strong>Mitigação:</strong> Contêineres não-root e volumes montados em <strong>Read-Only</strong>.</li>
+                    <li className="academic-li"><strong>Elevation of Privilege:</strong> <strong>Mitigação:</strong> Contêineres não-root e volumes montados em <em>Read-Only</em>.</li>
                   </ul>
 
                   <h3 className="academic-heading-2">4.2. Controles de Segurança Implementados no Pipeline de Dados e IA</h3>
@@ -571,7 +571,7 @@ A evolução do projeto STORM original para a versão individual robusta do <str
 A implantação gradual e focada revelou-se a abordagem ideal para sistemas reais, permitindo obter excelentes retornos em curto prazo e evitando custos de infraestrutura exagerados antes da consolidação do sistema.
                   </p>
                   <p className="academic-p">
-<strong>Trabalhos Futuros:</strong> Propõe-se a implementação de uma Feature Store descentralizada baseada no Feast; Autenticação e Assinatura Digital de Modelos com Sigstore; e a criação de workflows automatizados de <strong>Red Teaming</strong> executando injeções sistemáticas do tipo <strong>Evasion Attack</strong> com o Adversarial Robustness Toolbox (ART) para validar periodicamente a imunidade lógica do classificador em produção.
+<strong>Trabalhos Futuros:</strong> Propõe-se a implementação de uma Feature Store descentralizada baseada no Feast; Autenticação e Assinatura Digital de Modelos com Sigstore; e a criação de workflows automatizados de <em>Red Teaming</em> executando injeções sistemáticas do tipo <strong>Evasion Attack</strong> com o Adversarial Robustness Toolbox (ART) para validar periodicamente a imunidade lógica do classificador em produção.
                   </p>
 
                   <h2 className="academic-heading-1" style={{ marginTop: '30px' }}>7. REFERÊNCIAS BIBLIOGRÁFICAS</h2>
@@ -598,13 +598,13 @@ A implantação gradual e focada revelou-se a abordagem ideal para sistemas reai
             </main>
           </div>
         ) : (
-          /* Dashboard Grid Layout (Projeto Prático) <strong>/
+          /* Dashboard Grid Layout (Projeto Prático) */
           <div className="dashboard-grid">
             
-            {/</strong> Sidebar Area: Simulator controls and Log Console <strong>/}
+            {/* Sidebar Area: Simulator controls and Log Console */}
             <aside style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
-              {/</strong> Control Panel Card <strong>/}
+              {/* Control Panel Card */}
               <div className={`glass-panel ${isStorming ? 'neon-border-red' : 'neon-border-purple'}`}>
                 <h3 style={{ marginBottom: '16px', fontSize: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Activity size={18} style={{ color: '#a855f7' }} />
@@ -649,7 +649,7 @@ A implantação gradual e focada revelou-se a abordagem ideal para sistemas reai
                 </div>
               </div>
 
-              {/</strong> Live Terminal Log Card <strong>/}
+              {/* Live Terminal Log Card */}
               <div className="glass-panel" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <h3 style={{ marginBottom: '12px', fontSize: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <RefreshCw size={16} className={isConnected ? 'animate-spin' : ''} style={{ color: '#06b6d4' }} />
@@ -670,13 +670,13 @@ A implantação gradual e focada revelou-se a abordagem ideal para sistemas reai
               </div>
             </aside>
 
-            {/</strong> Main Dashboard: Weather Stats & Neighborhood warning cards <strong>/}
+            {/* Main Dashboard: Weather Stats & Neighborhood warning cards */}
             <main className="main-content">
               
-              {/</strong> Weather Gauges Grid <strong>/}
+              {/* Weather Gauges Grid */}
               <div className="stats-grid">
                 
-                {/</strong> Temp Gauge <strong>/}
+                {/* Temp Gauge */}
                 <div className="glass-panel glass-panel-hover telemetry-card">
                   <div className="icon-wrapper icon-temp">
                     <Thermometer size={24} />
@@ -687,7 +687,7 @@ A implantação gradual e focada revelou-se a abordagem ideal para sistemas reai
                   </div>
                 </div>
 
-                {/</strong> Humidity Gauge <strong>/}
+                {/* Humidity Gauge */}
                 <div className="glass-panel glass-panel-hover telemetry-card">
                   <div className="icon-wrapper icon-humidity">
                     <Droplets size={24} />
@@ -698,7 +698,7 @@ A implantação gradual e focada revelou-se a abordagem ideal para sistemas reai
                   </div>
                 </div>
 
-                {/</strong> Precipitation Gauge <strong>/}
+                {/* Precipitation Gauge */}
                 <div className="glass-panel glass-panel-hover telemetry-card">
                   <div className="icon-wrapper icon-precip">
                     <CloudRain size={24} />
@@ -709,7 +709,7 @@ A implantação gradual e focada revelou-se a abordagem ideal para sistemas reai
                   </div>
                 </div>
 
-                {/</strong> Pressure Gauge <strong>/}
+                {/* Pressure Gauge */}
                 <div className="glass-panel glass-panel-hover telemetry-card">
                   <div className="icon-wrapper icon-pressure">
                     <Gauge size={24} />
@@ -722,7 +722,7 @@ A implantação gradual e focada revelou-se a abordagem ideal para sistemas reai
 
               </div>
 
-              {/</strong> Neighborhood Flood Hazards Grid */}
+              {/* Neighborhood Flood Hazards Grid */}
               <div className="glass-panel" style={{ flexGrow: 1 }}>
                 <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <AlertTriangle size={20} style={{ color: isStorming ? '#ef4444' : '#fbbf24' }} />
