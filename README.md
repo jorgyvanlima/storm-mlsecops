@@ -1,321 +1,268 @@
-# STORM-MLSecOps: Framework de Segurança de Ponta a Ponta para Sistemas Inteligentes de Telemetria Climática e Alerta de Alagamento em Belém-PA
+# STORM-MLSecOps: Framework de Segurança de Ponta a Ponta para Sistemas Inteligentes de Telemetria Climática e Alerta de Alagamento em Belém-PA (v3 - Edição Ampliada e Segura)
 
-**Curso de Especialização em Sistemas de Segurança Integrada da Informação e Cibersegurança**
-**Universidade Federal do Pará (UFPA)**
-**Trabalho de Conclusão de Curso (TCC)**
+**Curso de Especialização em Sistemas de Segurança Integrada da Informação e Cibersegurança**  
+**Universidade Federal do Pará (UFPA)**  
+**Trabalho de Conclusão de Curso (TCC)**  
 
-**Autor:** Jorgyvan Braga Lima
-**Orientador:** Prof. Dr. André Figueira Riker
-**Local e Data:** Belém-PA, Julho de 2026
+**Autor:** Jorgyvan Braga Lima  
+**Orientador:** Prof. Dr. André Riker  
+**Local e Data:** Belém-PA, Julho de 2026  
 
 ---
 
 ### RESUMO
-O aumento exponencial no volume de dados climáticos gerados por dispositivos de Internet das Coisas (IoT) tem impulsionado a adoção de modelos de Aprendizado de Máquina (Machine Learning - ML) para predição e mitigação de desastres socioambientais, tais como alagamentos urbanos. No entanto, a incorporação de inteligência artificial em sistemas de controle crítico expande a superfície de ataque, introduzindo vulnerabilidades específicas como envenenamento de dados (*data poisoning*), manipulação adversarial e ataques à cadeia de suprimentos de software. 
-
-Este trabalho apresenta o **STORM-MLSecOps**, uma evolução do sistema STORM original (anteriormente desenvolvido em grupo) para um ecossistema individual e altamente seguro baseado nos princípios de **MLSecOps** (Machine Learning Security Operations). O sistema é estruturado em torno de **dois modelos de estudo de caso complementares**: um modelo baseado em telemetria simulada para classificação de riscos globais de alagamento por bairros históricos de Belém-PA (Doca de Souza Franco, Cidade Velha, Jurunas, Umarizal, Batista Campos e Marco) utilizando o algoritmo *K-Means* do *scikit-learn*; e um modelo prático real baseado na captura ativa de telemetria climática em tempo real para seis cidades do estado do Pará (Castanhal, Bragança, Salinas, Belém, Marabá e Parauapebas) via API segura do OpenWeatherMap com persistência em PostgreSQL. 
-
-O framework de segurança foi desenhado com base em diretrizes internacionais do OWASP ML Security Top 10, OpenSSF e NIST AI Risk Management Framework, implementando validação rigorosa de dados (*Pydantic Sanitizers*), versionamento reprodutível com DVC (*Data Version Control*), automação de CI/CD via GitHub Actions e CML (*Continuous Machine Learning*), e um modo automático de contingência (*Fail-Safe Inference Mode*) para garantir a resiliência operacional do sistema sob falha catastrófica ou corrupção do modelo de IA. Os resultados demonstram que a aplicação de MLSecOps ao projeto original STORM neutraliza vetores comuns de envenenamento e injeção adversarial, garantindo a integridade operacional exigida para um sistema de alerta de segurança integrada.
+O aumento exponencial no volume de dados climáticos gerados por dispositivos de Internet das Coisas (IoT) tem impulsionado a adoção de modelos de Aprendizado de Máquina (Machine Learning - ML) para predição e mitigação de desastres socioambientais, tais como alagamentos urbanos [819]. No entanto, a incorporação de inteligência artificial em sistemas de controle crítico expande significativamente a superfície de ataque, introduzindo vulnerabilidades específicas como envenenamento de dados (*data poisoning*), manipulação adversarial na inferência e ataques à cadeia de suprimentos de software [819, 862]. Este trabalho apresenta o **STORM-MLSecOps (v3)**, uma evolução profunda e individual do sistema STORM original (anteriormente projetado em grupo) para um ecossistema *hardened* baseado nos princípios de **MLSecOps** (Machine Learning Security Operations) [820, 850]. O sistema está estruturado em torno de **dois modelos de estudo de caso complementares**: um modelo simulado de telemetria climática que utiliza o algoritmo não supervisionado *K-Means* do *scikit-learn* para classificação de riscos de alagamento por bairros históricos de Belém-PA (Doca de Souza Franco, Cidade Velha, Jurunas, Umarizal, Batista Campos e Marco) [820, 840]; e um modelo prático real baseado na captura contínua e persistência de telemetria climática em tempo real para seis cidades do estado do Pará (Castanhal, Bragança, Salinas, Belém, Marabá e Parauapebas) via API segura (HTTPS) do OpenWeatherMap com persistência parametrizada em PostgreSQL [820, 841]. O framework de segurança foi desenhado com base em diretrizes internacionais do OWASP ML Security Top 10, OpenSSF e NIST AI Risk Management Framework, implementando validação de dados em múltiplas etapas via validadores *Pydantic*, versionamento criptográfico reprodutível de código, dados e modelos com DVC (*Data Version Control*) acoplado à nuvem *IBM Cloud Object Storage* (COS), automação de CI/CD via GitHub Actions e CML (*Continuous Machine Learning*), e um modo automático de contingência (*Fail-Safe Inference Mode*) para garantir a resiliência operacional do sistema sob falha catastrófica ou corrupção do modelo de IA [821, 824]. Os resultados analíticos demonstram que a aplicação sistemática de MLSecOps ao projeto STORM neutraliza vetores comuns de envenenamento e injeção adversarial na inferência, reduzindo drasticamente o tempo médio de detecção de ameaças e garantindo a integridade operacional exigida para um sistema de alerta de segurança integrada [281, 821].
 
 **Palavras-chave:** Cibersegurança, MLSecOps, MLOps, Telemetria Climática, K-Means, Belém-PA, Docker.
 
 ---
 
 ### ABSTRACT
-The exponential growth of climate data generated by Internet of Things (IoT) devices has driven the adoption of Machine Learning (ML) models to predict and mitigate socio-environmental disasters, such as urban flooding. However, integrating artificial intelligence into critical control systems expands the attack surface, introducing machine learning-specific vulnerabilities such as data poisoning, adversarial manipulation, and software supply chain attacks. 
-
-This work presents **STORM-MLSecOps**, an evolution of the original STORM system (previously developed as a group project) into an individual and highly secured ecosystem based on the principles of **MLSecOps** (Machine Learning Security Operations). The system is structured around **two complementary case studies**: a simulated model using telemetric climate inputs to classify global flooding risks across historical neighborhoods of Belém-PA (Doca, Cidade Velha, Jurunas, Umarizal, Batista Campos, and Marco) utilizing the *scikit-learn K-Means* clustering algorithm; and a practical real-time model capturing active climate telemetry for six cities in Pará (Castanhal, Bragança, Salinas, Belém, Marabá, and Parauapebas) via OpenWeatherMap secure HTTPS API with PostgreSQL persistence. 
-
-The security framework is designed based on international guidelines from the OWASP ML Security Top 10, OpenSSF, and the NIST AI Risk Management Framework. It implements multi-stage data validation (*Pydantic Sanitizers*), reproducible version control of datasets and models using DVC, automated CI/CD pipelines via GitHub Actions and CML, and an automatic contingency mode (*Fail-Safe Inference Mode*) to guarantee system resilience and high availability even under catastrophic model failure or corruption. The results demonstrate that applying MLSecOps to the original STORM project neutralizes common vectors of data poisoning and adversarial injection in inference, ensuring the operational integrity required for an integrated security alert system.
+The exponential growth of climate data generated by Internet of Things (IoT) devices has driven the adoption of Machine Learning (ML) models to predict and mitigate socio-environmental disasters, such as urban flooding [822]. However, integrating artificial intelligence into critical control systems expands the attack surface, introducing machine learning-specific vulnerabilities such as data poisoning, adversarial manipulation, and software supply chain attacks [822]. This work presents **STORM-MLSecOps (v3)**, an individual and highly secured evolution of the original STORM system (previously developed as a collaborative group project) into an autonomous, hardened ecosystem based on the principles of **MLSecOps** (Machine Learning Security Operations) [823, 851]. The system is structured around **two complementary case studies**: a simulated model using telemetric climate inputs to classify global flooding risks across historical neighborhoods of Belém-PA (Doca, Cidade Velha, Jurunas, Umarizal, Batista Campos, and Marco) utilizing the *scikit-learn K-Means* clustering algorithm [823, 840]; and a practical real-time model capturing active climate telemetry for six major cities in Pará (Castanhal, Bragança, Salinas, Belém, Marabá, and Parauapebas) via OpenWeatherMap secure HTTPS API with robust PostgreSQL persistence [823, 841]. The security framework is designed based on international guidelines from the OWASP ML Security Top 10, OpenSSF, and the NIST AI Risk Management Framework [824]. It implements multi-stage data validation (*Pydantic Sanitizers*), reproducible version control of datasets and models using DVC connected to *IBM Cloud Object Storage* (COS), automated CI/CD pipelines via GitHub Actions and CML, and an automatic contingency mode (*Fail-Safe Inference Mode*) to guarantee system resilience and high availability even under catastrophic model failure or corruption [824]. The analytical results demonstrate that applying MLSecOps to the original STORM project effectively neutralizes common vectors of data poisoning and adversarial injection in inference, ensuring the operational integrity required for an integrated security alert system [824].
 
 **Keywords:** Cybersecurity, MLSecOps, MLOps, Climate Telemetry, K-Means, Belém-PA, Docker.
 
 ---
 
 ### SUMÁRIO
-1. INTRODUÇÃO
-   1.1. Contextualização e Justificativa
-   1.2. O Problema das Enchentes em Belém-PA e o Projeto STORM
-   1.3. Objetivos do STORM-MLSecOps
-2. REFERENCIAL TEÓRICO
-   2.1. De DevOps para MLOps e a Transição para MLSecOps
-   2.2. O Ciclo de Vida do MLSecOps
-   2.3. Vetores de Ataque e Ameaças em Sistemas de ML (OWASP e JISEM)
-   2.4. Fundamentos de Machine Learning em Python e Interface de Engenharia de Dados
-3. ARQUITETURA DO SISTEMA STORM-MLSecOps E ESTUDOS DE CASO
-   3.1. Visão Geral da Arquitetura Conteinerizada (Docker Compose)
-   3.2. Estudo de Caso 1: Modelo Climático Simulado por Bairros (K-Means)
-   3.3. Estudo de Caso 2: Modelo Prático Real-Time de Cidades do Pará (OpenWeather API)
-4. MODELAGEM DE AMEAÇAS E CONTROLES DE SEGURANÇA (STRIDE)
-   4.1. Modelagem de Ameaças baseada em STRIDE
-   4.2. Controles de Segurança Implementados no Pipeline de Dados e IA
-   4.3. Mecanismo de Fallback e Resiliência (Fail-Safe Inference Mode)
-5. IMPLEMENTAÇÃO DO PIPELINE DE SEGURANÇA E CI/CD/CT
-   5.1. Versionamento Criptográfico e Reprodutibilidade com DVC
-   5.2. Integração e Entrega Contínuas Seguras via GitHub Actions e CML
-   5.3. Monitoramento de Drift, Qualidade e Anomalias de Cibersegurança
-6. CONCLUSÃO E TRABALHOS FUTUROS
-7. REFERÊNCIAS BIBLIOGRÁFICAS
+1. INTRODUÇÃO  
+   1.1. Contextualização e Justificativa  
+   1.2. O Problema das Enchentes em Belém-PA e o Projeto STORM Coletivo  
+   1.3. O Desafio de MLSecOps e Objetivos do STORM-MLSecOps  
+2. REFERENCIAL TEÓRICO DE MLOps, MLSECOPS E SEGURANÇA EM ML  
+   2.1. De DevOps para MLOps e a Transição para MLSecOps  
+   2.2. O Ciclo de Vida do MLSecOps de 9 Fases  
+   2.3. Vetores de Ataque e Ameaças em Sistemas de ML (OWASP e JISEM)  
+   2.4. Bibliotecas de Machine Learning e Fundamentos Matemáticos/Lógicos em Python  
+3. ARQUITETURA DO SISTEMA STORM-MLSecOps E ESTUDOS DE CASO  
+   3.1. Visão Geral da Arquitetura Conteinerizada (Docker Compose)  
+   3.2. Estudo de Caso 1: Modelo Climático Simulado por Bairros (K-Means)  
+   3.3. Estudo de Caso 2: Modelo Prático Real-Time de Cidades do Pará (OpenWeather API)  
+4. MODELAGEM DE AMEAÇAS E CONTROLES DE SEGURANÇA (STRIDE)  
+   4.1. Modelagem de Ameaças baseada em STRIDE  
+   4.2. Controles de Segurança Implementados no Pipeline de Dados e IA  
+   4.3. Mecanismo de Fallback e Resiliência (Fail-Safe Inference Mode)  
+5. IMPLEMENTAÇÃO DO PIPELINE DE SEGURANÇA E CI/CD/CT  
+   5.1. Versionamento Criptográfico e Reprodutibilidade com DVC  
+   5.2. Integração e Entrega Contínuas Seguras via GitHub Actions e CML  
+   5.3. Monitoramento de Drift, Qualidade e Anomalias de Cibersegurança  
+6. CONCLUSÃO E TRABALHOS FUTUROS  
+7. REFERÊNCIAS BIBLIOGRÁFICAS  
 
 ---
 
-## 1. INTRODUÇÃO
+### 1. INTRODUÇÃO
 
-### 1.1. Contextualização e Justificativa
-A tecnologia da informação e as infraestruturas de dados estão evoluindo de forma exponencial, gerando volumes colossais de dados provenientes de sensores ambientais, residenciais e industriais. Nesse contexto de *Big Data*, a Inteligência Artificial (IA) e o Aprendizado de Máquina (*Machine Learning* - ML) tornaram-se ferramentas essenciais para extrair conhecimento útil e realizar predições em tempo real. No entanto, à medida que os modelos de ML migram de protótipos experimentais para ambientes de missão crítica em produção, surge a necessidade urgente de garantir sua operacionalização confiável, escalável e segura.
+#### 1.1. Contextualização e Justificativa
+A tecnologia da informação e as infraestruturas de dados estão evoluindo de forma exponencial no contexto das cidades inteligentes, gerando volumes colossais de dados de sensores ambientais, residenciais e industriais (Big Data) [826, 853]. A Inteligência Artificial (IA) e o Aprendizado de Máquina (*Machine Learning* - ML) tornaram-se ferramentas essenciais para extrair conhecimento útil e realizar predições em tempo real [826, 853]. No entanto, à medida que os modelos de ML migram de protótipos experimentais isolados para ambientes de missão crítica em produção, surge a necessidade urgente de garantir sua operacionalização confiável, escalável e segura [826, 853].
 
-Historicamente, o desenvolvimento de software tradicional superou silos operacionais por meio da cultura **DevOps**, otimizando o ciclo de vida do software com automação de pipelines de integração e entrega contínua (CI/CD). Para responder às demandas dinâmicas de dados e de modelos de machine learning, surgiu o **MLOps**, estendendo os conceitos de DevOps para versionar código, dados e modelos, automatizando fluxos experimentais e implantando-os de forma previsível. Contudo, a simples replicação de DevOps e MLOps desconsidera a nova superfície de ataque introduzida pela natureza probabilística e orientada a dados do machine learning.
+Historicamente, o desenvolvimento de software tradicional lidou com silos operacionais por meio da cultura **DevOps**, otimizando o ciclo de vida do software com automação de pipelines de integração e entrega contínua (CI/CD) [827, 854]. Para responder às demandas dinâmicas de dados e de modelos de machine learning, surgiu o **MLOps**, estendendo os conceitos de DevOps para versionar código, dados e modelos, automatizando fluxos experimentais e implantando-os de forma previsível [827, 854]. Contudo, a simples replicação de DevOps e MLOps desconsidera a nova superfície de ataque introduzida pela natureza probabilística e orientada a dados do machine learning, gerando vulnerabilidades silenciosas e indetectáveis por firewalls tradicionais [827, 854].
 
-### 1.2. O Problema das Enchentes em Belém-PA e o Projeto STORM
-O município de Belém-PA, capital do estado do Pará, caracteriza-se por um clima equatorial úmido e solos de baixa altitude com proximidade a estuários fluviais, tornando várias de suas áreas urbanas severamente vulneráveis a alagamentos rápidos e marés altas de tempestade severas. O monitoramento em tempo real de índices climáticos, aliado a modelos inteligentes capazes de classificar dinamicamente o risco por bairro e alertar a defesa civil, constitui um recurso vital para mitigar riscos à integridade física dos cidadãos e das infraestruturas críticas da cidade.
+#### 1.2. O Problema das Enchentes em Belém-PA e o Projeto STORM Coletivo
+Belém-PA é uma metrópole equatorial caracterizada por índices pluviométricos severos, marés fluviais elevadas e baixas altitudes em áreas consolidadas [571, 820]. Regiões urbanas críticas, como a Avenida Doca de Souza Franco, localizam-se abaixo do nível da maré cheia, sofrendo inundações recorrentes que causam perdas materiais e riscos de vida à população [571, 820].
 
-O projeto original **STORM (Sistema Inteligente de Telemetria Climática e Alerta de Alagamento para Belém-PA)** foi originalmente desenvolvido de forma coletiva por discentes do curso de pós-graduação em Cibersegurança da UFPA. O sistema utiliza um ecossistema 100% conteinerizado em Docker, composto por sensores IoT simulados e reais, um broker MQTT para ingestão de telemetria, um serviço de IA com modelo de agrupamento *K-Means* treinado de forma isolada, uma API Backend em FastAPI para processamento em tempo real, persistência em banco de dados PostgreSQL, transmissão via WebSockets e um painel visual frontend intuitivo baseado no tema "Tempestade".
+Para mitigar esses desastres, o projeto original **STORM** foi desenvolvido de forma coletiva por discentes do curso de pós-graduação em Cibersegurança da UFPA [166, 820]. O sistema utiliza um ecossistema 100% conteinerizado em Docker, composto por sensores IoT simulados e reais, um broker MQTT para ingestão de telemetria, um serviço de IA com modelo de agrupamento *K-Means* treinado de forma isolada, uma API Backend em FastAPI para processamento em tempo real, persistência em banco de dados PostgreSQL, transmissão via WebSockets e um painel visual frontend intuitivo baseado no tema "Tempestade" [166-168, 840]. Contudo, como o foco inicial do projeto coletivo centrou-se na funcionalidade, a segurança lógica e a integridade matemática dos algoritmos de ML ficaram expostas a riscos severos [170, 834].
 
-Este TCC apresenta a reformulação individual e evolução do STORM para o repositório **STORM-MLSecOps** (https://github.com/jorgyvanlima/storm-mlsecops), elevando o nível de maturidade do projeto e introduzindo um ecossistema robusto de controles de segurança integrados ao pipeline de dados e IA. O objetivo é demonstrar como o framework de MLSecOps pode proteger um sistema crítico de detecção de catástrofes naturais contra manipulações adversariais e falhas sistêmicas, tornando as predições confiáveis e rastreáveis sob a ótica da Engenharia de Segurança de Sistemas.
+#### 1.3. O Desafio de MLSecOps e Objetivos do STORM-MLSecOps
+Ao integrar inteligência artificial a sistemas críticos de alerta socioambiental, os modelos de IA dependem da integridade do fluxo de dados para manter sua precisão preditiva [282]. Se o pipeline de ingestão carece de validação automatizada e as bibliotecas terceiras de ML contêm brechas de segurança, o sistema pode ser severamente corrompido, gerando predições catastróficas ou expondo dados sensíveis [282, 860]. Daí emerge o **MLSecOps** (Machine Learning Security Operations), integrando segurança proativa (*"shift-left"*) por design e automação de segurança em todas as fases do ciclo de vida da IA [285, 498].
 
-### 1.3. Objetivos do STORM-MLSecOps
-O objetivo geral deste trabalho é propor, implementar e avaliar a arquitetura do STORM-MLSecOps, integrando controles modernos de segurança ao ecossistema STORM de telemetria climática do Pará. Os objetivos específicos incluem:
-1. Realizar a modelagem de ameaças utilizando o framework STRIDE adaptado para machine learning sobre a arquitetura conteinerizada do STORM.
-2. Implementar salvaguardas técnicas contra *Data Poisoning* (Envenenamento de Dados) e *Evasion Attacks* (Evasão Adversarial) na telemetria climática.
-3. Desenvolver e contrapor **dois estudos de caso práticos**: um modelo simulado de agrupamento para bairros de Belém e um modelo real de coleta meteorológica para cidades do Pará (Castanhal, Bragança, Salinas, Belém, Marabá, Parauapebas) via API OpenWeatherMap.
-4. Consolidar a reprodutibilidade e rastreabilidade por meio de versionamento de código, dados e modelos usando o DVC (*Data Version Control*) integrado à VPS HostGator.
-5. Desenvolver e validar o mecanismo automático de fallback *Fail-Safe Inference Mode* para garantia de alta disponibilidade sob falha sistêmica do modelo preditivo.
-
----
-
-## 2. REFERENCIAL TEÓRICO
-
-### 2.1. De DevOps para MLOps e a Transição para MLSecOps
-No desenvolvimento tradicional, a fragmentação entre os times de desenvolvimento (Dev) e operações (Ops) causava atrasos significativos na colocação de softwares em produção. A cultura **DevOps** resolveu esse problema ao introduzir colaboração ágel, monitoramento e pipelines automatizados de CI/CD, reduzindo o tempo de entrega das releases e elevando a qualidade do software.
-
-Quando os modelos de machine learning começaram a ser largamente adotados, percebeu-se que a simples aplicação de DevOps era insuficiente. O machine learning introduz o elemento de incerteza e comportamento dinâmico baseado em dados. Enquanto o software tradicional é determinístico (composto por regras de programação explícitas), os sistemas de ML são dinâmicos e probabilísticos, gerando o comportamento por meio de treinamento iterativo sobre grandes bases de dados. Surge então o **MLOps**, agregando novas práticas como orquestração de fluxos complexos baseados em DAGs (Grafos Acíclicos Dirigidos), gerenciamento de *Feature Stores*, controle de versão de dados e modelos (DVC), monitoramento de desvio de conceitos e retreino contínuo (CT - *Continuous Training*).
-
-A evolução de MLOps para **MLSecOps** decorre do entendimento de que pipelines de MLOps automatizados herdam vulnerabilidades tradicionais e herdam riscos específicos de ML. O MLSecOps define a segurança como uma responsabilidade compartilhada entre engenheiros de ML, cientistas de dados e analistas de segurança, integrando salvaguardas técnicas desde a concepção do pipeline climático até o monitoramento em produção.
-
-```
-       DevOps  ==> (Automação, CI/CD, Infraestrutura como Código)
-         ||
-       MLOps   ==> (Orquestração de DAGs, DVC, Model Registry, CT)
-         ||
-      MLSecOps ==> (STRIDE, Pydantic Sanitizers, Grype/Trivy, Model Signing)
-```
-
-### 2.2. O Ciclo de Vida do MLSecOps
-De acordo com os frameworks de referência definidos pela OpenSSF, pela Ericsson e pela Space-ISAC, a segurança da informação não pode ser considerada uma barreira aplicada apenas no final da esteira. O MLSecOps adota a estratégia de *shift-left*, integrando segurança cibernética ao longo de todas as 9 fases fundamentais do ciclo de vida:
-1. **Planejamento e Design Seguro:** Modelagem de ameaças (STRIDE/ATLAS) e estabelecimento da baseline de conformidade da aplicação de telemetria.
-2. **Engenharia de Dados Segura:** Controles de proveniência (lineage), limpeza rigorosa de datasets e verificação contra envenenamento (*Data Poisoning*).
-3. **Experimentação:** Treinamento em ambientes sandboxed seguros, documentação de metadados de experimentos e testes iniciais de robustez adversarial.
-4. **Desenvolvimento e Teste de Pipelines:** Desenvolvimento sob ciclo de vida seguro (SDLC), aplicando testes de integração, SAST (com Bandit para scripts Python), DAST e fuzzing.
-5. **Integração Contínua (CI):** Builds automatizados e isolados de pacotes com scanners de vulnerabilidades em dependências (Grype/Trivy).
-6. **Entrega e Implantação Contínuas (CD):** Deploy seguro de contêineres e imagens assinadas digitalmente, protegendo artefatos de IA em trânsito e em repouso.
-7. **Treinamento Contínuo (CT) Seguro:** Pipeline automatizado de retreino acionado por desvios estatísticos (*Data/Concept Drift*), realizando validações antes de promover o modelo retreinado.
-8. **Serviço de Modelos (Serving):** Hardening de contêineres de inferência (FastAPI), controle rigoroso de acessos (Least Privilege) e sanitização rigorosa de inputs de tempo real para neutralizar ataques adversariais.
-9. **Monitoramento Contínuo de Segurança:** Dashboards funcionais que exibem indicadores de desempenho climáticos, desvios estatísticos de predição e alertas automatizados de segurança física e digital.
-
-### 2.3. Vetores de Ataque e Ameaças em Sistemas de ML (OWASP e JISEM)
-Os sistemas inteligentes sofrem com novas classes de ameaças catalogadas pelo OWASP Machine Learning Top 10 e descritas no referencial teórico do JISEM:
-*   **ML01: Input Manipulation / Evasion Attack (Evasão Adversarial):** Ataque focado na etapa de inferência em tempo real, onde o atacante introduz perturbações estatísticas nos dados de entrada para enganar o modelo, fazendo-o errar a predição. No STORM-MLSecOps, isto poderia ocorrer se um microcontrolador climático IoT sofresse uma invasão lógica e manipulasse pequenos coeficientes de precipitação e pressão de forma a ocultar uma enchente severa iminente no bairro da Doca.
-*   **ML02: Data Poisoning Attack (Envenenamento de Dados):** Ocorre quando um agente malicioso insere amostras corrompidas ou deliberadamente alteradas no dataset de treino ou no fluxo de retreino contínuo para distorcer as fronteiras ou centroides de classificação, induzindo o modelo a erro sistemático.
-*   **ML03: Model Inversion Attack (Inversão de Modelo):** Ataque focado em obter dados confidenciais de treinamento do modelo por meio de consultas repetidas à API de inferência, violando a privacidade dos dados.
-*   **ML05: Model Theft (Roubo de Modelo):** Cópia ou engenharia reversa não autorizada do modelo de IA por meio de monitoramento de queries ou acesso aos arquivos persistidos em repouso (.pkl).
-*   **ML06: AI Supply Chain Attacks (Ataques à Cadeia de Suprimentos de IA):** Ingestão de bibliotecas ou imagens comprometidas, ou desserialização de modelos maliciosos sem validação criptográfica de hashes de proveniência.
-*   **ML10: Model Poisoning:** Substituição direta dos arquivos binários de pesos do modelo no ambiente operacional por uma versão adulterada com backdoors lógicos.
-
-### 2.4. Fundamentos de Machine Learning em Python e Interface de Engenharia de Dados
-O ecossistema Python estabeleceu-se como a linguagem padrão para ciência de dados e machine learning devido à sua robustez e flexibilidade de integração ("Python como cola") [104, 335, 336]. A base teórica e prática do desenvolvimento moderno apoia-se em conceitos fundamentais de bibliotecas amplamente adotadas no mercado:
-
-#### 2.4.1. Manipulação de Matrizes e Estruturação Tabular (NumPy & Pandas)
-Toda a computação matemática em algoritmos de Machine Learning é executada sobre matrizes multidimensionais homogêneas providas pela biblioteca `NumPy` (`numpy.ndarray`) [109, 339]. O uso do NumPy permite vetorizar operações matemáticas e evitar laços tradicionais em Python (`for loops`), os quais sofrem degradação de desempenho devido à natureza interpretada da linguagem e ao bloqueio do Global Interpreter Lock (GIL) [104, 337, 338]. 
-
-A estruturação e o pré-processamento de datasets complexos e indexados temporalmente são realizados utilizando os objetos `DataFrame` e `Series` da biblioteca `pandas` [340]. O pandas unifica conceitos estatísticos de tabelas com a eficiência indexada de bancos de dados relacionais SQL, viabilizando operações de limpeza, agregação de dados climáticos por grupos (`groupby`), remoção de nulos (`isna().sum()`) e reamostragem temporal (*resampling*) indispensável para séries temporais climáticas [340, 341, 374, 389].
-
-#### 2.4.2. A Interface Padronizada do Scikit-Learn e Pipelines
-A biblioteca `scikit-learn` popularizou-se na indústria pela padronização de sua interface baseada em classes estimadoras (*Estimators*) [116, 132]. Qualquer algoritmo do framework segue três métodos fundamentais de design:
-*   `.fit(X, y)`: Executa o algoritmo de treinamento sobre o conjunto de características `X` e rótulos `y` (em modelos supervisionados) [133]. No caso de algoritmos de aprendizado não supervisionado (como o agrupamento *K-Means* usado no STORM), o método é instanciado como `.fit(X)`, ajustando os centroides com base na geometria de distribuição dos dados climáticos [130, 133].
-*   `.predict(X)`: Realiza a inferência lógica para novas amostras climáticas, atribuindo-as à classe ou cluster mais próximo com base nos parâmetros aprendidos durante o treino [115, 117].
-*   `.score(X, y)`: Calcula métricas de acurácia ou coeficiente de determinação ($R^2$) para avaliar a generalização do classificador sobre conjuntos de teste independentes, mitigando riscos de *overfitting* [119, 125].
-
-Para garantir a reprodutibilidade e evitar o vazamento de dados (*data leakage*) durante etapas de pré-processamento e escala, utiliza-se a classe `Pipeline` do scikit-learn [99, 152]. Os pipelines encapsulam de forma sequencial estimadores e transformadores (como o escalonador `StandardScaler` ou `MinMaxScaler`), garantindo que parâmetros de escala (média e variância) sejam aprendidos estritamente a partir do conjunto de treino e aplicados de forma consistente aos conjuntos de teste e inferência real [136, 152, 535].
-
-#### 2.4.3. Escalonamento e Normalização Estatística
-Algoritmos baseados em medidas de distância euclidiana (como o *K-Means* e o *k-NN*) sofrem severamente se as variáveis climáticas possuírem diferentes magnitudes e escalas [115, 438]. Por exemplo, uma variação de pressão atmosférica de 1000 hPa a 1030 hPa dominaria completamente o cálculo de distância em relação a picos de precipitação de 0 mm a 25 mm. Para neutralizar esse problema, aplica-se o escalonamento estatístico `StandardScaler`, que centraliza e escala cada variável climática para média zero ($\mu = 0$) e variância unitária ($\sigma^2 = 1$):
-
-$$z = \frac{x - \mu}{\sigma}$$
-
-#### 2.4.4. Geração de Dados Sintéticos e Validação
-Durante as etapas experimentais do desenvolvimento seguro de modelos de IA, recorre-se ao uso de dados artificiais para testar a resiliência operacional contra anomalias estatísticas [429]. O scikit-learn oferece geradores como o `make_blobs` para distribuições isotrópicas em clusters [432, 433] e `make_moons` para geometrias não lineares [435], permitindo que engenheiros controlem o desvio-padrão dos dados (*cluster standard deviation*) e a semente de aleatoriedade (`random_state`) para obtenção de testes reproduzíveis [433, 444].
-
-#### 2.4.5. Serialização de Artefatos e Vulnerabilidades Associadas (Pickle)
-A persistência e implantação de modelos treinados em produção utilizam tradicionalmente o módulo `pickle` de Python para converter os objetos do scikit-learn em fluxos binários persistidos em disco (`model.pkl` e `scaler.pkl`) [64, 417, 534]. Embora altamente eficiente, o uso do `pickle` introduz riscos severos de segurança da informação, uma vez que a desserialização de arquivos não confiáveis pode executar código arbitrário na máquina hospedeira [291]. O MLSecOps mitiga este vetor de ataque por meio do isolamento estrito de rede do contêiner e de auditorias criptográficas de hash e assinatura digital nos arquivos gerados no pipeline [116, 551, 562].
+Este TCC apresenta a reformulação individual e evolução do STORM para o repositório **STORM-MLSecOps** (https://github.com/jorgyvanlima/storm-mlsecops), elevando o nível de maturidade do projeto e introduzindo um ecossistema robusto de controles de segurança integrados ao pipeline de dados e IA [828, 856]. O objetivo geral deste trabalho é propor, implementar e avaliar a arquitetura do STORM-MLSecOps, integrando controles modernos de segurança ao ecossistema STORM de telemetria climática do Pará [829, 857]. Os objetivos específicos incluem:
+1. Realizar a modelagem de ameaças utilizando o framework STRIDE adaptado para machine learning sobre a arquitetura conteinerizada do STORM [829].
+2. Implementar salvaguardas técnicas contra *Data Poisoning* e *Evasion Attacks* na telemetria climática [829].
+3. Desenvolver e contrapor **dois estudos de caso práticos**: um modelo simulado de agrupamento para bairros de Belém e um modelo real de coleta meteorológica para cidades do Pará (Castanhal, Bragança, Salinas, Belém, Marabá, Parauapebas) via API OpenWeatherMap [829].
+4. Consolidar a reprodutibilidade e rastreabilidade por meio de versionamento de código, dados e modelos usando o DVC (*Data Version Control*) integrado à VPS HostGator [829].
+5. Desenvolver e validar o mecanismo automático de fallback *Fail-Safe Inference Mode* para garantia de alta disponibilidade sob falha sistêmica do modelo preditivo [829].
 
 ---
 
-## 3. ARQUITETURA DO SISTEMA STORM-MLSecOps E ESTUDOS DE CASO
+### 2. REFERENCIAL TEÓRICO DE MLOps, MLSECOPS E SEGURANÇA EM ML
 
-### 3.1. Visão Geral da Arquitetura Conteinerizada (Docker Compose)
-O STORM-MLSecOps é arquitetado como uma aplicação modular nativa na nuvem, sendo integralmente conteinerizado e implantado via Docker Compose através de seis serviços isolados que se comunicam de forma estrita em redes privadas virtuais:
+#### 2.1. De DevOps para MLOps e a Transição para MLSecOps
+No desenvolvimento tradicional, a fragmentação entre os times de desenvolvimento (Dev) e operações (Ops) acarretava atrasos e ineficiências na colocação de softwares em produção [830, 858]. A cultura **DevOps** resolveu esse problema ao introduzir colaboração ágil, monitoramento e pipelines automatizados de CI/CD, diminuindo o tempo de entrega das releases e elevando a qualidade geral do software [830, 858].
 
-```
-+-------------------------------------------------------------------------+
-|                          DOCKER COMPOSE STACK                           |
-|                                                                         |
-|  +--------------------+      +--------------------+      +-----------+  |
-|  |    iot-simulator   | ===> |   broker (MQTT)    | ===> |  backend  |  |
-|  | (Emula telemetria) | [TLS]| (Mosquitto Broker) | [TLS]| (FastAPI) |  |
-|  +--------------------+      +--------------------+      +-----------+  |
-|                                                               ||        |
-|                                                               || [JDBC] |
-|                                                               \/        |
-|  +--------------------------------+                     +-----------+  |
-|  |          ai-service            |                     |    db     |  |
-|  |  (K-Means Train & Validation)   |                     | (Postgres)|  |
-|  |  Outputs: model.pkl, scaler.pkl |                     +-----------+  |
-|  +--------------------------------+                           ^        |
-|       ||                                                      |        |
-|       \/ [Read-Only Mount]                                    |        |
-|  +------------------------------------------------------------+        |
-|  |  frontend (React App + Nginx Web Server)                   |        |
-|  |  - Dashboard Bairros de Belém (Simulado)                   |        |
-|  |  - Painel Real-Time de Cidades do Pará (OpenWeather API)   |        |
-|  +------------------------------------------------------------+        |
-+-------------------------------------------------------------------------+
-```
+Quando os modelos de machine learning começaram a ser largamente adotados, percebeu-se que a simples aplicação de DevOps era insuficiente [831, 859]. O machine learning introduz o elemento de incerteza e comportamento dinâmico baseado em dados [831, 859]. Enquanto o software tradicional é determinístico (composto por regras de programação explícitas), os sistemas de ML são dinâmicos e probabilísticos, gerando o comportamento por meio de treinamento iterativo sobre grandes bases de dados [831, 859]. Surge então o **MLOps**, agregando novas práticas como orquestração de fluxos complexos baseados em DAGs (Grafos Acíclicos Dirigidos), gerenciamento de *Feature Stores*, controle de versão de dados e modelos (DVC), monitoramento de desvio de conceitos (*concept drift*) e retreino contínuo (CT - *Continuous Training*) [831, 859].
 
-1. **db (Banco de Dados):** Executa o PostgreSQL 15 baseado em Alpine Linux. O contêiner é isolado de toda a rede externa, sem mapeamento de portas locais para o host, mitigando ataques de varredura externa de portas e força bruta.
-2. **broker (Broker MQTT):** Eclipse Mosquitto v2 gerenciando a fila de tópicos de telemetria climática IoT (`storm/telemetry`), configurado com autenticação robusta.
-3. **ai-service (Treinador da IA):** Contêiner efêmero em Python 3.11-slim. Gera o dataset sintético de 1.000 amostras reproduzindo o clima equatorial úmido de Belém, executa o agrupamento *K-Means* do scikit-learn estruturado para 3 clusters de risco de alagamento, e exporta os binários `model.pkl` e `scaler.pkl` para um volume compartilhado em formato *Read-Only* antes de encerrar sua execução.
-4. **backend (API de Processamento):** Executa em FastAPI. Carrega os arquivos serializados do volume compartilhado. Processa as telemetrias climáticas recebidas, calcula a probabilidade estatística de alagamento por bairros, persiste na base de dados de forma parametrizada e transmite os dados para o frontend instantaneamente via WebSockets.
-5. **iot-simulator (Simulador IoT):** Script que emula dados contínuos de sensores físicos climáticos locais a cada 8 segundos para simular os limites climáticos dos bairros de Belém.
-6. **frontend (Dashboard Interativo):** Interface SPA React compilada em Vite com servidor web Nginx configurado via *multi-stage build*.
+A evolução de MLOps para **MLSecOps** decorre do entendimento de que pipelines de MLOps automatizados herdam vulnerabilidades tradicionais e herdam riscos específicos de ML [832]. O MLSecOps define a segurança como uma responsabilidade compartilhada entre engenheiros de ML, cientistas de dados e analistas de segurança, integrando salvaguardas técnicas desde a concepção do pipeline climático até o monitoramento em produção [832].
 
-### 3.2. Estudo de Caso 1: Modelo Climático Simulado por Bairros (K-Means)
-O primeiro modelo de estudo de caso foca na **avaliação probabilística de riscos de alagamento por bairros históricos de Belém-PA** (Doca de Souza Franco, Cidade Velha, Jurunas, Umarizal, Batista Campos e Marco) a partir de variáveis climáticas agregadas pela telemetria simulada.
+#### 2.2. O Ciclo de Vida do MLSecOps de 9 Fases
+De acordo com os frameworks de referência definidos pela OpenSSF, pela Ericsson e pela Space-ISAC, a segurança da informação não pode ser considerada uma barreira aplicada apenas no final da esteira [832, 861]. O MLSecOps adota a estratégia de *shift-left*, integrando segurança cibernética ao longo de todas as 9 fases fundamentais do ciclo de vida de dados e modelos [832, 861]:
 
-*   **Ingestão de Dados e Lógica de ML:** O simulador climáticos IoT envia mensagens contendo leituras lógicas de temperatura, umidade, pressão atmosférica e precipitação instantânea. No backend FastAPI, o modelo *K-Means* (treinado de forma sandboxed pelo `ai-service`) é carregado em memória. O K-Means classifica os vetores de entrada nos clusters lógicos de risco:
-    *   *Classe 0 (Risco Baixo):* Dias secos ou chuvas fracas isoladas.
-    *   *Classe 1 (Risco Moderado):* Chuvas constantes com umidade elevada.
-    *   *Classe 2 (Risco Alto):* Tempestades tropicais rigorosas de grande intensidade pluviométrica.
-*   **Salvaguardas de Segurança Climática:** 
-    1.  *Data Poisoning Protection (ML02):* Antes de processar a inferência climática ou persistir os dados do simulador, o backend FastAPI submete as leituras climáticas recebidas a uma etapa de validação matemática estrita. Limites plausíveis da física equatorial de Belém-PA são definidos de forma estática no backend:
-        *   Temperatura: $15^\circ\text{C}$ a $45^\circ\text{C}$
-        *   Umidade Relativa: $0\%$ a $100\%$
-        *   Pressão Atmosférica: $980\text{ hPa}$ a $1030\text{ hPa}$
-        *   Precipitação Pluviométrica: $\ge 0\text{ mm}$
-        Qualquer leitura espúria que viole essas restrições é rejeitada antes de atingir as funções de inferência lógicas do K-Means, evitando anomalias estatísticas ou o deslocamento dos centroides do modelo.
-    2.  *Fail-Safe Inference Mode (Alta Disponibilidade operacional):* Se os arquivos lógicos de modelo do volume compartilhado estiverem indisponíveis ou corrompidos, o backend ativa de forma automática o modo de contingência por regras. O sistema mantém-se operando continuamente, coletando os dados recebidos do broker MQTT e persistindo-os parametrizadamente no PostgreSQL, mas realiza o cálculo de probabilidade de alagamento dos bairros por meio de uma árvore de decisão determinística baseada na altitude geográfica real e precipitação acumulada do bairro (ex: Doca, crítica devido à altitude de apenas 1,2 metros sobre o nível médio do mar).
+1. **Planejamento e Design Seguro:** Modelagem de ameaças (STRIDE/ATLAS) e estabelecimento da baseline de conformidade da aplicação de telemetria [833, 861].
+2. **Engenharia de Dados Segura:** Controles de proveniência (*lineage*), limpeza rigorosa dos dados coletados de fontes externas e verificação contra envenenamento (*Data Poisoning*) [833, 861].
+3. **Experimentação:** Execução de pesquisas em ambientes isolados seguros, documentação completa de metadados, seleção de modelos e testes de robustez adversarial [833, 861].
+4. **Desenvolvimento e Teste de Pipelines:** Desenvolvimento sob ciclo de vida seguro (SDLC), aplicando testes de integração, SAST (com Bandit para scripts Python), DAST e fuzzing [833, 861].
+5. **Integração Contínua (CI):** Builds automatizados e isolados de pacotes com scanners de vulnerabilidades em dependências e verificação de integridade [833, 861].
+6. **Entrega e Implantação Contínuas (CD):** Deploy seguro de contêineres e imagens assinadas digitalmente, protegendo pacotes e modelos em trânsito e em repouso [833, 861].
+7. **Treinamento Contínuo (CT) Seguro:** Pipeline automatizado de retreino acionado por detecção de drift ou novas coletas de dados, realizando validações criptográficas e de integridade antes do deploy de um modelo retreinado [833, 861].
+8. **Serviço de Modelos (Serving):** Hardening de contêineres, controle rigoroso de acesso baseados em privilégios (Least Privilege), validação e sanitização de dados de inferência de tempo real para neutralizar ataques adversariais [833, 861].
+9. **Monitoramento Contínuo de Segurança:** Dashboards funcionais exibindo indicadores de desempenho climáticos, desvios estatísticos de predição e alertas automatizados de segurança física e digital [833, 861].
 
-### 3.3. Estudo de Caso 2: Modelo Prático Real-Time de Cidades do Pará (OpenWeather API)
-O segundo modelo de estudo de caso foi implementado de forma independente para **consolidar o monitoramento real em tempo real** das condições atmosféricas de seis cidades importantes do estado do Pará: **Castanhal, Bragança, Salinas, Belém, Marabá e Parauapebas**.
+#### 2.3. Vetores de Ataque e Ameaças em Sistemas de ML (OWASP e JISEM)
+Os ataques direcionados a sistemas inteligentes diferem sensivelmente dos exploits de injeção tradicionais (como SQL Injection ou Cross-Site Scripting) [862]. A literatura especializada consolidada pela OWASP (Top 10 ML Threats 2023) e por Venigalla (2026) no JISEM mapeia as seguintes vulnerabilidades críticas de sistemas de IA [862]:
 
-*   **Captura Ativa via HTTPS da API OpenWeatherMap:** Diferente do ecossistema simulado por bairros, este módulo faz chamadas diretas e seguras (via HTTPS) para a API internacional da OpenWeather utilizando credenciais oficiais criptografadas do desenvolvedor (`jorgyvan`) e a chave API `02f705b3f0412c8e91f571365b697b82`.
-*   **Banco de Dados Dedicado e SQL Parameterization:** Os dados reais de temperatura, umidade, pressão atmosférica, velocidade do vento e precipitação das cidades do Pará são gravados em uma tabela dedicada no banco de dados, inicializada pelo script estrutural `init_realtime.sql`:
-    ```sql
-    CREATE TABLE IF NOT EXISTS storm_realtime_telemetry (
-        id SERIAL PRIMARY KEY,
-        city_name VARCHAR(100) NOT NULL,
-        temperature DOUBLE PRECISION NOT NULL,
-        humidity INTEGER NOT NULL,
-        pressure INTEGER NOT NULL,
-        wind_speed DOUBLE PRECISION NOT NULL,
-        precipitation_1h DOUBLE PRECISION DEFAULT 0.0,
-        weather_description VARCHAR(255),
-        captured_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-    );
-    ```
-    Toda inserção de dados no PostgreSQL pelo FastAPI utiliza consultas SQL parametrizadas via driver nativo `psycopg2` com marcadores de posição `%s`, neutralizando de forma definitiva o risco de ataques por injeção de SQL (SQLi).
-*   **Higienização Estrita contra Data Poisoning (ML02):** Para blindar o banco de dados e as predições futuras contra possíveis interceptações ou sequestros lógicos da API de terceiros, o microsserviço no backend FastAPi utiliza validadores estruturados do **Pydantic** (`TelemetrySanitizer`). Se a API retornar leituras absurdas (outliers extremos fora dos limites climatológicos da Amazônia), os dados são abortados com logs de auditoria e alerta de segurança emitidos no terminal.
-*   **Painel de Monitoramento Dinâmico (Tailwind & Chart.js) com Navegação Segura:** No frontend, criamos uma nova tela dedicada e exclusiva (`realtime.html`) que exibe:
-    1.  *Cards de Cidades em Grid:* Renderização dinâmica das 6 cidades com estados visuais e níveis de atenção climática baseados na precipitação pluviométrica real.
-    2.  *Gráfico Dinâmico Chart.js:* Exibição de um gráfico comparativo em tempo real do perfil de temperatura das cidades capturadas no banco de dados.
-    3.  *Tabela de Projeções Climáticas para 2026:* Uma seção contendo projeções e tendências climáticas fundamentadas para Salinas (alagamento litorâneo em marés equinociais), Bragança (alagamento estuarino) e Belém.
-    4.  *Controle de Navegação:* A página incorpora botões visuais intuitivos e seguros que possibilitam ao usuário retornar instantaneamente ao Painel de Bairros (página principal `/`) ou acessar de forma direta o novo repositório oficial do projeto individual no GitHub (`https://github.com/jorgyvanlima/storm-mlsecops`).
+* **ML02: Data Poisoning (Envenenamento de Dados):** Ocorre quando um ator malicioso altera ou introduz dados de treinamento falsificados na fase de ingestão ou engenharia de dados [862]. Em modelos de agrupamento como o *K-Means* usado no STORM, a inserção de métricas anômalas distorce severamente os centros dos clusters, fazendo com que cenários reais de perigo de alagamento sejam classificados incorretamente como risco baixo [862]. De acordo com a pesquisa publicada no USENIX por Zhang et al. (2024), **ataques direcionados de envenenamento de dados obtiveram sucesso em 73,8% dos casos ao contaminar apenas 3,2% do dataset de treinamento** [289]. No varejo e e-commerce, a VE3 Global documentou um aumento de 287% nesses ataques, gerando perdas médias de US$ 4,2 milhões antes da detecção [298].
+* **ML01: Input Manipulation / Evasion Attack (Evasão Adversarial):** Ataque focado na etapa de inferência em tempo real, onde o atacante introduz perturbações estatísticas nos dados de entrada para enganar o modelo, fazendo-o errar a predição [862]. No STORM-MLSecOps, isto poderia ocorrer se um microcontrolador climático IoT sofresse uma invasão lógica e manipulasse pequenos coeficientes de precipitação e pressão de forma a ocultar uma enchente severa iminente no bairro da Doca [862]. Pesquisadores demonstraram em ambiente real que pequenos adesivos colados estrategicamente em placas de trânsito induzem modelos de visão computacional de veículos autônomos a erro catastrófico de classificação [297].
+* **ML06: AI Supply Chain Attack (Ataque à Cadeia de Suprimentos):** Envolve a incorporação de bibliotecas de terceiros corrompidas ou a desserialização de arquivos de modelos `.pkl` que contenham backdoors lógicos embarcados [862]. Ao carregar o arquivo pickle usando `joblib.load()` sem auditoria prévia, o backend pode sofrer execução remota de código (RCE) malicioso [862]. Estudos de benchmark da CrowdStrike apontam que **58% dos incidentes de segurança analisados em sistemas de inteligência artificial exploraram vulnerabilidades diretamente localizadas na pipeline de dados** [281].
+* **ML08: Model Skewing (Distorção de Modelo):** Ataque focado no desvio lento e incremental de limites de classificação em sistemas baseados em retreino automático [503, 504].
+* **ML03: Model Inversion / Membership Inference (Inversão e Extração):** API rate limiting fraco permite que atacantes interroguem recursivamente o modelo até extrair a base de conhecimento de treinamento ou engenharia reversa dos pesos proprietários do modelo [291, 513]. O JISEM aponta que a ausência de monitoramento de desvio conceitual (*concept drift*) atinge **72,4% dos modelos vulneráveis** em produção [282].
+
+#### 2.4. Bibliotecas de Machine Learning e Fundamentos Matemáticos/Lógicos em Python
+O ecossistema Python estabeleceu-se como a linguagem padrão para ciência de dados e machine learning devido à sua robustez e flexibilidade de integração ("Python como cola") [835]. A base teórica e prática do desenvolvimento moderno apoia-se em conceitos fundamentais de bibliotecas amplamente adotadas no mercado:
+
+##### 2.4.1. Manipulação de Matrizes e Estruturação Tabular (NumPy & Pandas)
+Toda a computação matemática em algoritmos de Machine Learning é executada sobre matrizes multidimensionais homogêneas providas pela biblioteca NumPy (`numpy.ndarray`) [835]. O uso do NumPy permite vetorizar operações matemáticas e evitar laços tradicionais em Python (*for loops*), os quais sofrem degradação de desempenho devido à natureza interpretada da linguagem e ao bloqueio do Global Interpreter Lock (GIL) [835].
+
+A biblioteca Pandas estende o NumPy ao introduzir a estrutura de dados tabular rotulada `DataFrame`, que armazena dados heterogêneos sob um índice unificado [747, 835]. No STORM-MLSecOps, DataFrames do Pandas são utilizados na fase de ingestão para manipulação de séries temporais (*time series resampling*) e preenchimento de lacunas via imputação estruturada [276, 835].
+
+##### 2.4.2. A Interface Padronizada do Scikit-Learn e Pipelines
+A biblioteca scikit-learn popularizou-se na indústria pela padronização de sua interface baseada em classes estimadoras (*Estimators*) [836]. Qualquer algoritmo do framework segue três métodos fundamentais de design [836]:
+* `.fit(X, y)`: Executa o algoritmo de treinamento sobre o conjunto de características X e rótulos y (em modelos supervisionados) [836]. No caso de algoritmos de aprendizado não supervisionado (como o agrupamento *K-Means* usado no STORM), o método é instanciado como `.fit(X)`, ajustando os centroides com base na geometria de distribuição dos dados climáticos [836].
+* `.predict(X)`: Realiza a inferência lógica para novas amostras climáticas, atribuindo-as à classe ou cluster mais próximo com base nos parâmetros aprendidos durante o treino [276, 836].
+* `.score(X, y)`: Calcula métricas de acurácia ou coeficiente de determinação (R^2) para avaliar a generalização do classificador sobre conjuntos de teste independentes, mitigando riscos de *overfitting* [836].
+
+Para garantir a reprodutibilidade e evitar o vazamento de dados (*data leakage*) durante etapas de pré-processamento e escala, utiliza-se a classe `Pipeline` do scikit-learn [837]. Os pipelines encapsulam de forma sequencial estimadores e transformadores (como o escalonador `StandardScaler` ou `MinMaxScaler`), garantindo que parâmetros de escala (média e variância) sejam aprendidos estritamente a partir do conjunto de treino e aplicados de forma consistente aos conjuntos de teste e inferência real [837].
+
+##### 2.4.3. Formulação Matemática do K-Means e Padronização
+O algoritmo *K-Means* é um método de agrupamento não supervisionado que visa particionar $n$ observações em $K$ clusters, nos quais cada observação pertence ao cluster com a média mais próxima (centroide) [820, 840]. Matematicamente, o objetivo do algoritmo consiste em minimizar a soma dos quadrados das distâncias euclidianas intracluster (inércia):
+
+$$rg\min_{\mathbf{S}} \sum_{i=1}^{K} \sum_{\mathbf{x} \in S_i} \|\mathbf{x} - oldsymbol{\mu}_i\|^2$$
+
+Onde $oldsymbol{\mu}_i$ é a média geométrica dos pontos pertencentes ao cluster $S_i$.
+
+Dado que o cálculo de distância euclidiana é altamente sensível a diferenças de grandezas e escalas entre as variáveis (por exemplo, pressão atmosférica expressa em hPa variando em torno de $1010$ e precipitação variando de $0$ a $50$), a ausência de normalização faria com que variáveis de maior magnitude dominassem a inércia do modelo. Para neutralizar esse desvio, aplica-se a padronização via escore-z (*StandardScaler*):
+
+$$z = rac{x - \mu}{\sigma}$$
+
+Onde $\mu$ representa a média da característica e $\sigma$ o seu desvio-padrão.
+
+##### 2.4.4. Geração de Dados Sintéticos e Validação
+Durante as etapas experimentais do desenvolvimento seguro de modelos de IA, recorre-se ao uso de dados artificiais para testar a resiliência operacional contra anomalias estatísticas [838]. O scikit-learn oferece geradores como o `make_blobs` para distribuições de clusters bem delimitados e controlados, permitindo que engenheiros manipulem a semente de aleatoriedade (`random_state`) e avaliem a imunidade dos limites do classificador frente a perturbações [838].
+
+##### 2.4.5. Serialização de Artefatos e Vulnerabilidades Associadas (Pickle)
+A persistência e implantação de modelos treinados em produção utilizam tradicionalmente o módulo `pickle` de Python para converter os objetos do scikit-learn em fluxos binários persistidos em disco (`model.pkl` e `scaler.pkl`) [762, 839]. Embora altamente eficiente, o uso do pickle introduz riscos severos de segurança da informação (como alertado no OWASP ML06 e no scanner ModelScan), uma vez que a desserialização de arquivos não confiáveis utilizando a instrução nativa do Python pode executar código arbitrário na máquina hospedeira [839, 862]. O MLSecOps mitiga este vetor de ataque por meio do isolamento estrito de rede do contêiner e de auditorias criptográficas de hash e assinatura digital nos arquivos gerados no pipeline [839].
 
 ---
 
-## 4. MODELAGEM DE AMEAÇAS E CONTROLES DE SEGURANÇA (STRIDE)
+### 3. ARQUITETURA DO SISTEMA STORM-MLSecOps E ESTUDOS DE CASO
 
-### 4.1. Modelagem de Ameaças baseada em STRIDE
-A aplicação sistemática do STRIDE para o STORM-MLSecOps revela cenários que exigem controles específicos na modelagem física e lógica:
-*   **Spoofing (Identidade):** Um sensor climático invasor pirata pode forjar a identidade de um microcontrolador IoT de Belém e enviar falsos picos de precipitação para acionar alarmes espúrios de evacuação civil.
-    *   *Mitigação STORM-MLSecOps:* Autenticação criptográfica no Broker MQTT com credenciais exclusivas armazenadas em cofres locais do Docker Secrets.
-*   **Tampering (Adulteração):** Um atacante intercepta as mensagens climáticas no MQTT ou envenena o gerador de dados sintéticos do `ai-service` com valores climáticos espúrios para enviesar os centroides do K-Means (*Data Poisoning* / ML02).
-    *   *Mitigação STORM-MLSecOps:* Higienização matemática estrita e descarte lógico de outliers nos validadores de dados na ingestão, além de hashes MD5/SHA256 gerados pelo DVC no armazenamento da VPS HostGator.
-*   **Repudiation (Não repúdio):** Impossibilidade de rastrear modificações de código ou atualizações inadequadas do classificador.
-    *   *Mitigação STORM-MLSecOps:* Geração de logs permanentes no formato estruturado (JSON) com proveniência criptográfica auditável baseada nos hashes de commits do Git e DVC.
-*   **Information Disclosure (Vazamento de Informação):** Exposição inadequada de credenciais de bancos de dados ou telemetria climática de áreas urbanas críticas.
-    *   *Mitigação STORM-MLSecOps:* Isolamento de rede do contêiner do PostgreSQL e encriptação completa em trânsito (HTTPS/WSS/TLS 1.3) sem credenciais salvas no código-fonte.
-*   **Denial of Service (Indisponibilidade):** Inundação da API FastAPI com alto volume de requisições ou submissão de vetores de inferência pesados para forçar overhead de CPU.
-    *   *Mitigação STORM-MLSecOps:* Limitação de recursos do Docker Compose (limites rígidos de CPU e memória por contêiner), rate limiting no backend, e modo automático de contingência offline (*Fail-Safe Inference Mode*).
-*   **Elevation of Privilege (Elevação de Privilégios):** Um contêiner comprometido obtém privilégios de root sobre a máquina hospedeira (*Host Escape*).
-    *   *Mitigação STORM-MLSecOps:* Execução de todos os contêineres Docker da stack como usuários não-root baseados em Alpine Linux e montagem de volumes sensíveis (como `shared_model` contendo os binários `.pkl`) em modo estritamente Read-Only.
+#### 3.1. Visão Geral da Arquitetura Conteinerizada (Docker Compose)
+O STORM-MLSecOps é arquitetado como uma aplicação modular nativa na nuvem, sendo integralmente conteinerizado e implantado via Docker Compose através de seis serviços isolados que se comunicam de forma estrita em redes privadas virtuais [840, 863]:
 
----
+1. **db (Banco de Dados):** Executa o PostgreSQL 15 baseado em Alpine Linux [863]. O contêiner é isolado de toda a rede externa, sem mapeamento de portas locais para o host, mitigando ataques de varredura externa de portas e força bruta de senhas [863]. Toda a comunicação com a API backend se dá exclusivamente via rede virtual interna [863].
+2. **broker (Broker MQTT):** Hospeda o Eclipse Mosquitto v2, gerenciando a fila de tópicos de telemetria climática IoT (`storm/telemetry`) [863]. É configurado com autenticação baseada em credenciais isoladas e controle de acesso granular de tópicos.
+3. **ai-service (Treinador da IA):** Contêiner efêmero baseado em Python 3.11-slim [863]. No startup do sistema, ele gera um dataset sintético calibrado com 1.000 amostras reproduzindo o clima equatorial úmido de Belém (compreendendo dias ensolarados de calor intenso, chuvas rápidas de fim de tarde e tempestades tropicais de grande precipitação) [863]. Ele realiza a limpeza, normaliza com o `StandardScaler` e executa o algoritmo de clusterização *K-Means* do *scikit-learn* estruturado para 3 grupos de risco (Baixo, Moderado, Alto) [863]. Os artefatos resultantes (`model.pkl` e `scaler.pkl`) são exportados para um volume Docker compartilhado (`shared_model`) [863]. Após o treino bem-sucedido, o contêiner encerra liberando recursos de hardware da infraestrutura [863].
+4. **backend (API de Processamento):** Executa em FastAPI (Python 3.11-slim) [863]. Ao inicializar, ele carrega os artefatos serializados do volume compartilhado [863]. Conecta-se assincronamente ao Broker MQTT e ao PostgreSQL [863]. A cada dado climático de telemetria recebido do IoT, o backend realiza a inferência lógica usando o classificador normalizado para prever o risco global de alagamento, calcula probabilidade específica de inundação nos bairros urbanos de Belém, persiste na base de dados parametrizada e transmite via WebSockets instantaneamente para o frontend [168, 863].
+5. **iot-simulator (Simulador IoT):** Script em Python 3.11-slim que emula dados contínuos de sensores físicos climáticos reais a cada 8 segundos para fins de teste operacional em desenvolvimento [863]. Ele subscreve-se ao tópico de comandos e permite chavear presets climáticos ("Dia Seco", "Chuva Moderada", "Tempestade Extrema") de forma imediata pelo painel [863].
+6. **frontend (Dashboard Interativo):** Interface SPA desenvolvida em React e empacotada em Vite com ícones Lucide [863]. Utiliza um servidor Nginx interno em formato *multi-stage build* para servir os arquivos estáticos e criar o painel escuro customizado inspirado no tema "Tempestade" [863].
 
-## 5. IMPLEMENTAÇÃO DO PIPELINE DE SEGURANÇA E CI/CD/CT
+#### 3.2. Estudo de Caso 1: Modelo Climático Simulado por Bairros (K-Means)
+O primeiro estudo de caso consiste na classificação de riscos climáticos por bairros históricos de Belém-PA com base em dados de telemetria climática simulada [820, 840].
+* **Ingestão e Pré-processamento:** O simulador IoT envia ao broker MQTT as leituras contendo temperatura, umidade, pressão atmosférica e precipitação instantânea [840, 842].
+* **Agrupamento K-Means:** O classificador K-Means particiona a distribuição climática de Belém em três clusters geométricos correspondentes aos riscos de inundação [840, 863]:
+  * *Cluster 0 (Risco Baixo):* Caracterizado por alta temperatura, baixa umidade e precipitação zero ou insignificante.
+  * *Cluster 1 (Risco Moderado):* Caracterizado por umidade moderada, temperatura amena e precipitação intermitente.
+  * *Cluster 2 (Risco Alto):* Caracterizado por queda abrupta da pressão atmosférica, alta umidade e precipitação acumulada elevada.
+* **Segurança Integrada contra Data Poisoning:** O script `generate_data.py` e o inicializador de inferência do backend FastAPI implementam validadores estritos de sanidade matemática para impedir que outliers distorçam as fronteiras dos clusters (envenenamento lento do modelo de IA) [170, 840].
 
-### 5.1. Versionamento Criptográfico e Reprodutibilidade com DVC
-Diferente do versionamento de código estático feito pelo Git, o STORM-MLSecOps utiliza o **DVC (Data Version Control)** para gerenciar o versionamento de grandes datasets e modelos serializados climáticos. O DVC opera acoplado ao Git: enquanto o Git rastreia arquivos de ponteiros pequenos `.dvc` (contendo o hash de proveniência criptográfico SHA256 correspondente), o arquivo volumoso é versionado criptograficamente e salvo internamente na **VPS HostGator**.
-
-O pipeline experimental de machine learning é formalizado por meio do arquivo declarativo `dvc.yaml` que orquestra as seguintes fases sequenciais:
-*   `preprocess`: Ingestão, validação de tipos físicos e normalização estatística usando scripts Python.
-*   `train`: Treinamento do clusterizador K-Means do *scikit-learn* com 3 centros de classe baseando-se no dataset normalizado, exportando os arquivos binários serializados.
-*   `evaluate`: Avaliação quantitativa do modelo, gerando métricas JSON de acurácia, matriz de confusão e curva de aprendizado para fins de auditoria de consistência antes do deployment.
-
-### 5.2. Integração e Entrega Contínuas Seguras via GitHub Actions e CML
-Para garantir conformidade contínua, o STORM-MLSecOps implementa uma esteira de integração contínua (CI) e entrega contínua (CD) usando o **GitHub Actions** associado ao **CML (Continuous Machine Learning)**. Sempre que o código é atualizado via `git push` ou um Pull Request é aberto, o pipeline automatizado realiza as seguintes verificações:
-1.  **Static Application Security Testing (SAST):** Executa o scanner `bandit` na base de código do backend para detectar falhas comuns de segurança lógica e de infraestrutura.
-2.  **Software Composition Analysis (SCA):** Executa o scanner `trivy` ou `grype` para auditar vulnerabilidades conhecidas (CVEs) em bibliotecas declaradas no arquivo `requirements.txt`.
-3.  **Auditoria Automatizada CML:** O CML reconstrói o ambiente, re-executa as etapas do arquivo `dvc.yaml` a partir dos dados limpos, gera relatórios automáticos de consistência de predição e plota a curva de aprendizado do modelo diretamente nos comentários do Pull Request, impedindo desvios indesejados de qualidade ou segurança antes da liberação.
-
-### 5.3. Monitoramento de Drift, Qualidade e Anomalias de Cibersegurança
-O ciclo de vida operacional do STORM-MLSecOps encerra-se na fase de monitoramento contínuo pós-implantação. O sistema utiliza agentes do **Prometheus** coletando métricas lógicas de contêineres e transmitindo para painéis unificados de visualização do **Grafana**, monitorando continuamente os seguintes indicadores críticos:
-*   **Distribuição das Predições do K-Means:** Monitora o percentual de ocorrência das 3 classes lógicas do modelo. Mudanças repentinas na distribuição de alertas climaticamente inadequados acionam avisos de desvios estatísticos severos (*Concept/Data Drift*).
-*   **Volumetria de Telemetria Climática:** Taxa de telemetrias válidas recebidas por segundo no Mosquitto Broker, identificando tentativas lógicas de negação de serviço.
-*   **Registros de Ativação do Fail-Safe Mode:** Emite avisos em severidade máxima se o backend acionar a contingência estática devido à exclusão ou corrupção do modelo de machine learning, permitindo que operadores ajam preventivamente antes de falhas operacionais críticas.
+#### 3.3. Estudo de Caso 2: Modelo Prático Real-Time de Cidades do Pará (OpenWeather API)
+O segundo modelo de estudo de caso foi implementado de forma independente para **consolidar o monitoramento real em tempo real** das condições atmosféricas de seis cidades importantes do estado do Pará: **Castanhal, Bragança, Salinas, Belém, Marabá e Parauapebas** [841].
+* **Captura Ativa via HTTPS da API OpenWeatherMap:** Diferente do ecossistema simulado por bairros, este módulo faz chamadas diretas e seguras (via HTTPS) para a API internacional da OpenWeather utilizando credenciais oficiais criptografadas do desenvolvedor (`jorgyvan`) e a chave API `02f705b3f0412c8e91f571365b697b82` [841].
+* **Banco de Dados Dedicado e SQL Parameterization:** Os dados reais de temperatura, umidade, pressão atmosférica, velocidade do vento e precipitação das cidades do Pará são gravados em uma tabela dedicada no banco de dados, inicializada pelo script estrutural `init_realtime.sql` [841]. Toda inserção de dados no PostgreSQL pelo FastAPI utiliza consultas SQL parametrizadas via driver nativo `psycopg2` com marcadores de posição `%s`, neutralizando de forma definitiva o risco de ataques por injeção de SQL (SQLi) [176, 841].
+* **Higienização Estrita contra Data Poisoning (ML02):** Para blindar o banco de dados e as predições de regressão e séries temporais de 2026 contra possíveis interceptações ou sequestros lógicos da API de terceiros, o microsserviço no backend FastAPI utiliza validadores estruturados do **Pydantic** (`TelemetrySanitizer`) [841]. Se a API retornar leituras aberrantes fora dos limites climatológicos lógicos da Amazônia equatorial (como temperaturas acima de 55 graus C ou umidades negativas), os dados são abortados e um log de segurança é registrado imediatamente [841].
+* **Painel de Monitoramento Dinâmico (Tailwind & Chart.js) com Navegação Segura:** No frontend, a tela dedicada (`realtime.html`) exibe cards dinâmicos para as seis cidades, um gráfico interativo Chart.js comparando as temperaturas coletadas em tempo real e uma seção de tendências meteorológicas fundamentada para 2026 [841]. A interface conta com botões explícitos e isolados para retornar ao Painel Principal de Bairros (/) ou acessar diretamente o repositório de produção do TCC no GitHub (https://github.com/jorgyvanlima/storm-mlsecops) [841].
 
 ---
 
-## 6. CONCLUSÃO E TRABALHOS FUTUROS
+### 4. MODELAGEM DE AMEAÇAS E CONTROLES DE SEGURANÇA (STRIDE)
 
-A evolução do projeto STORM original para a versão individual robusta do **STORM-MLSecOps** comprova empiricamente a viabilidade prática da integração de cibersegurança e MLOps para proteção de sistemas críticos de controle e mitigação de desastres naturais. Através de controles modernos de machine learning proativos — como higienização lógica na ingestão climática simulada e de dados reais, versionamento reprodutível e criptográfico de datasets com DVC, auditoria analítica automatizada de builds com o CML, análise estática de vulnerabilidades e um robusto modo automático de contingência (*Fail-Safe Inference Mode*) —, o STORM-MLSecOps eleva o nível de resiliência e integridade operacional exigida para um sistema de alerta meteorológico seguro.
+#### 4.1. Modelagem de Ameaças baseada em STRIDE
+A aplicação do framework STRIDE sobre a infraestrutura de dados e IA do STORM-MLSecOps identifica os seguintes cenários de risco lógicos e de segurança física [842]:
 
-A implantação gradual e focada em mitigar gargalos específicos, como demonstrado na literatura (Santandrea, 2022; Carvalho e Paiva, 2025), revelou-se a abordagem ideal para sistemas reais, permitindo obter excelentes retornos em curto prazo e evitando custos de infraestrutura desnecessários antes da consolidação técnica do sistema.
+* **Spoofing (Identidade):** Sensores climáticos IoT invasores ou simulados forjando o identificador do ESP32 oficial para enviar falsas telemetrias de risco crítico ao broker MQTT [842].
+  * *Mitigação:* Implementação de autenticação baseada em hash e canais criptografados SSL/TLS com credenciais gerenciadas de forma isolada [842].
+* **Tampering (Adulteração / Data Poisoning):** Interceptação do tráfego ou envenenamento deliberado dos datasets históricos na nuvem ou no volume de modelos [842].
+  * *Mitigação:* Validação estrita e descarte lógico de outliers na ingestão, além de hashes MD5/SHA256 gerados pelo DVC no armazenamento da VPS HostGator [170, 842].
+* **Repudiation (Não Repúdio):** Modificações no modelo de classificação ou inserções errôneas no banco de dados sem possibilidade de auditoria forense [842].
+  * *Mitigação:* Logs de telemetria estruturados em formato JSON com proveniência criptográfica do hash do commit de build [842, 846].
+* **Information Disclosure (Vazamento de Informação):** Exposição externa do PostgreSQL à internet facilitando vazamento de dados de infraestrutura civil crítica [842].
+  * *Mitigação:* Isolamento de rede do contêiner db, sem mapeamento de portas locais para o host, eliminando a superfície de exposição externa [169, 842].
+* **Denial of Service (DoS / Sobrecarga):** Ataque DoS de volumetria de mensagens na fila MQTT para causar estouro de memória e indisponibilidade do backend FastAPI [842].
+  * *Mitigação:* Docker compose resource limits restringindo limites de CPU e memória, rate limiting no backend, e modo automático de contingência offline (*Fail-Safe Inference Mode*) [170, 842].
+* **Elevation of Privilege (Elevação de Privilégios):** Comprometimento lógico do FastAPI permitindo escalada de privilégios para obter controle do host através de escape de contêiner [842].
+  * *Mitigação:* Execução de todas as imagens Docker como usuário `non-root` e montagem do volume crítico de modelos com flag `:ro` (Read-Only) para a API [177, 842].
 
-Como trabalhos futuros, propõe-se:
-1.  **Implementação de uma Feature Store descentralizada** baseada no Feast com Kubernetes para o tráfego de dados climáticos pesados em larga escala.
-2.  **Autenticação e Assinatura Digital de Modelos com Sigstore:** Integrar o ecossistema Sigstore para assinar criptograficamente os modelos `.pkl` gerados no pipeline e verificar via backend antes da desserialização no startup.
-3.  **Auditoria Física e Testes Adversariais Periódicos (Red Teaming):** Criação de workflows automatizados gerando ataques lógicos sistemáticos do tipo *Evasion Attack* com o Adversarial Robustness Toolbox (ART) para validar periodicamente a imunidade do K-Means.
+#### 4.2. Controles de Segurança Implementados no Pipeline de Dados e IA
+Com base nos padrões propostos pela ENISA, OpenSSF e CPQD, implementamos controles técnicos e lógicos estritos no STORM-MLSecOps [821]:
+
+1. **Pydantic TelemetrySanitizer (Ingestão Segura):** Toda mensagem JSON recebida pela API do backend é validada através de tipos definidos pelo Pydantic, descartando outliers e impedindo desvios intencionais no K-Means [170].
+2. **psycopg2 placeholders (Prevenção de SQLi):** Todas as gravações no PostgreSQL utilizam consultas parametrizadas, impossibilitando que mensagens enviadas via MQTT executem comandos espúrios no banco de dados [176].
+3. **Model Read-Only Volume (Segurança de Artefatos de IA):** O volume compartilhado `shared_model` é montado no contêiner do backend FastAPI em modo Read-Only (`:ro`), impedindo que vulnerabilidades em tempo de execução no backend permitam a substituição do arquivo `.pkl` do modelo [177].
+4. **Isolamento e HARDENING de Redes Docker:** A rede interna criada pelo Docker Compose impede tráfego externo direto para o banco de dados e broker Mosquitto, reduzindo a superfície de ataque física do sistema [169, 174].
+
+#### 4.3. Mecanismo de Fallback e Resiliência (Fail-Safe Inference Mode)
+Para garantir alta disponibilidade operacional (High Availability) e resiliência contra ataques de exclusão ou corrupção de artefatos de ML (ML10 - Model Poisoning), o STORM-MLSecOps implementa o **Fail-Safe Inference Mode** [170, 846]:
+* Se os arquivos `model.pkl` ou `scaler.pkl` estiverem corrompidos, ausentes ou sofrerem falha catastrófica de carregamento na inicialização, o FastAPI intercepta a exceção [170, 846].
+* Em vez de interromper o monitoramento e derrubar o microsserviço de telemetria, o backend ativa de forma totalmente autônoma o modo de contingência por regras lógicas estáticas determinísticas [170, 846].
+* Essas regras locais foram calibradas com base na altitude física real dos bairros mais vulneráveis de Belém-PA. No bairro da Doca, que possui altitude base crítica de $1,2$ metros acima do nível médio do rio, o limiar pluviométrico estático de acúmulo de chuva é configurado em $12,0$ mm. Caso a precipitação instantânea ultrapasse esse limiar sob condições de maré desfavoráveis, o sistema emite o alerta de Risco Alto, contornando a indisponibilidade temporária da inteligência artificial e mantendo o monitoramento civil de enchentes ativo [170, 846].
 
 ---
 
-## 7. REFERÊNCIAS BIBLIOGRÁFICAS
+### 5. IMPLEMENTAÇÃO DO PIPELINE DE SEGURANÇA E CI/CD/CT
+
+#### 5.1. Versionamento Criptográfico e Reprodutibilidade com DVC
+Diferente do versionamento tradicional de código estático feito pelo Git, o STORM-MLSecOps gerencia o versionamento de dados climáticos e modelos utilizando o **DVC (Data Version Control)** [172]. O DVC funciona de forma acoplada ao Git: enquanto o Git armazena pequenos metadados em arquivos de ponteiro `.dvc` (contendo o hash MD5 criptográfico do arquivo de dados ou modelo correspondente), o arquivo real pesado (como o dataset de 1000 linhas ou o modelo de clusterização serializado de machine learning) é versionado criptograficamente e armazenado internamente na **VPS HostGator** [173, 598].
+
+O pipeline experimental de machine learning é formalizado por meio de um arquivo declarativo `dvc.yaml` [208]. Esse arquivo orquestra de forma acíclica direta (DAG) as etapas do projeto [365]:
+* **Fase 1: preprocess** (Ingestão, validação de tipos físicos climáticos e normalização usando scripts python parametrizados, salvando o dataset processado) [211].
+* **Fase 2: train** (Treinamento do clusterizador K-Means com 3 centros de classe baseando-se no dataset normalizado, exportando os arquivos binários serializados) [211].
+* **Fase 3: evaluate** (Avaliação do modelo, gerando métricas JSON de f1, acurácia, curva ROC e matriz de confusão para fins de auditoria de consistência antes do deployment) [211].
+
+O DVC garante que qualquer modificação em dados climáticos históricos ou hyperparâmetros do modelo resulte na invalidação de hashes e no recálculo automático de predições, entregando reprodutibilidade completa e auditoria à prova de adulterações lógicas [116, 373].
+
+#### 5.2. Integração e Entrega Contínuas Seguras via GitHub Actions e CML
+Para automatizar a conformidade, o STORM-MLSecOps implementa uma esteira de integração contínua (CI) e entrega contínua (CD) usando o **GitHub Actions** associado ao **CML (Continuous Machine Learning)** [869]. Sempre que o desenvolvedor submete modificações lógicas no pipeline via comando `git push` ou abre um *Pull Request*, o pipeline do GitHub Actions executa de forma automática e isolada as seguintes etapas [116, 119, 870]:
+
+1. **Auditoria Estática de Segurança (SAST):** Executa o scanner `bandit` na base de código do FastAPI backend e do ai-service, varrendo o código-fonte em busca de falhas lógicas como a desserialização insegura de objetos (como pickles sem validação ou carregamento inseguro de dependências) [870].
+2. **Fuzzing e Testes Unitários:** Executa a test suite lógica com o `pytest`, validando os limites lógicos do algoritmo climáticos e os casos de teste de contingência da API [209, 870].
+3. **Avaliação Estatística Automatizada:** O CML é inicializado para carregar os datasets do DVC, recalcular o modelo preditivo climáticos e comparar as métricas estatísticas atuais com a versão anterior do modelo [174, 213, 870].
+4. **Geração do Relatório de Auditoria:** O CML compila automaticamente uma folha de relatório Markdown rica direto nos comentários do Pull Request, apresentando uma matriz de comparação do desvio estatístico do modelo preditivo e os gráficos analíticos gerados no pipeline [213, 870]. Isso permite verificar proativamente o *Model Skewing* e a integridade matemática antes do deploy final em produção [116, 870].
+5. **Entrega e Deploy Seguro:** Ao gerar uma nova release criptográfica estável no repositório, o GitHub Actions dispara a esteira de CD, empacotando e publicando as imagens Docker hardened assinadas digitalmente para o registro e acionando o deploy final de infraestrutura segura [116, 119, 870].
+
+#### 5.3. Monitoramento de Drift, Qualidade e Anomalias de Cibersegurança
+O ciclo de vida operacional do STORM-MLSecOps encerra-se na fase de monitoramento contínuo pós-implantação [311, 433]. O sistema utiliza agentes do **Prometheus** coletando métricas lógicas de contêineres e transmitindo para painéis de visualização unificados do **Grafana** [328, 871]. Os painéis monitoram continuamente os seguintes indicadores críticos de desempenho e integridade climática de Belém-PA [871]:
+* **Volumetria e Taxa de Telemetria:** Número de telemetrias válidas recebidas por segundo no Mosquitto Broker. Quedas drásticas ou picos excessivos são sinalizados como potenciais ataques de negação de serviço lógicos (RAG-Specific DoS ou saturação MQTT) [543, 871].
+* **Distribuição das Predições do K-Means:** Monitora o percentual de ocorrência das predições lógicas das 3 classes do modelo climáticos [871]. Desvios estatísticos significativos (como, por exemplo, o modelo predizer repentinamente 100% de "Risco Baixo" durante chuvas fortes em Belém) evidenciam anomalias de *Concept Drift* ou envenenamento lento do modelo de predição [871].
+* **Registros e Ativação do Fail-Safe Mode:** Exibe alertas proeminentes vermelhos no console frontend e logs dedicados de incidentes se o backend FastAPI acionar o modo de contingência offline devido à ausência ou corrupção do modelo de machine learning [116, 871]. Isso permite que operadores da defesa civil e engenheiros de segurança integrada visualizem o estado real da infraestrutura e ajam preventivamente antes de falhas operacionais críticas [109, 871].
+
+---
+
+### 6. CONCLUSÃO E TRABALHOS FUTUROS
+
+A evolução do projeto STORM original para a versão individual robusta do **STORM-MLSecOps** comprova empiricamente a viabilidade prática da integração de cibersegurança e MLOps para proteção de sistemas críticos de controle e mitigação de desastres naturais [872]. Através de controles modernos de machine learning proativos — como higienização lógica na ingestão climática [116], versionamento reprodutível e criptográfico de datasets de treino e testes com DVC [116, 173], auditoria analítica estatística automatizada de builds com o CML [213], análise estática de vulnerabilidades e um robusto modo automático de contingência [116, 561] —, o STORM-MLSecOps eleva sensivelmente o nível de resiliência, integridade operacional e confiabilidade cibernética de alertas meteorológicos em Belém-PA [872].
+
+A implantação gradual e focada em mitigar gargalos específicos, como demonstrado na literatura (Santandrea, 2022; Carvalho e Paiva, 2025), revelou-se a abordagem ideal para sistemas reais, permitindo obter excelentes retornos em curto prazo e evitando custos de infraestrutura exagerados antes da consolidação do sistema [873].
+
+Como trabalhos futuros, propõe-se [873]:
+1. **Implementação de uma Feature Store descentralizada** baseada no Feast com Kubernetes para o tráfego de dados climáticos pesados em larga escala [167, 192].
+2. **Autenticação e Assinatura Digital de Modelos com Sigstore:** Integrar o ecossistema Sigstore para assinar criptograficamente os modelos .pkl gerados no pipeline e verificar via backend antes da desserialização no startup [551, 559].
+3. **Auditoria Física e Testes Adversariais Periódicos (Red Teaming):** Criação de workflows automatizados gerando ataques lógicos sistemáticos do tipo *Evasion Attack* com o Adversarial Robustness Toolbox (ART) para validar periodicamente a imunidade lógica do K-Means [560, 576].
+
+---
+
+### 7. REFERÊNCIAS BIBLIOGRÁFICAS
 
 1. CARVALHO, Maurício Moraes Preto; PAIVA, Sofia Larissa da Costa. **Práticas de MLOps em softwares reais**. Goiânia: Instituto de Informática – Universidade Federal de Goiás (UFG), 2025.
-
 2. CPQD. **Implementação de Sistemas de IA com RAG**: metodologia, implementação e acompanhamento de projetos de IA. Campinas: CPQD, Projeto INSPIRE, 2026.
-
-3. ERICSSON. **MLSecOps: Protecting the AI/ML Lifecycle in telecom**. Ericsson White Paper, 2024. Disponível em: <https://www.ericsson.com/>.
-
-4. EVANS, Sarah; SHOROV, Andrey; SOYKAN, Elif Ustundag; SHAMMARY, Bahaulddin. **Visualizing Secure MLOps (MLSecOps)**: A Practical Guide for Building Robust AI/ML Pipeline Security. Open Source Security Foundation (OpenSSF) Whitepaper, 2025. Disponível em: <https://openssf.org/>.
-
+3. ERICSSON. **MLSecOps: Protecting the AI/ML Lifecycle in telecom**. Ericsson White Paper, 2024.
+4. EVANS, Sarah; SHOROV, Andrey; SOYKAN, Elif Ustundag; SHAMMARY, Bahaulddin. **Visualizing Secure MLOps (MLSecOps)**: A Practical Guide for Building Robust AI/ML Pipeline Security. Open Source Security Foundation (OpenSSF) Whitepaper, 2025.
 5. GARCIA, Vinicius Cardoso. **Machine Learning Operations (MLOps)**: Um Guia para a Construção de Arquiteturas de Software Otimizadas. Recife: Garcia, 2023.
-
-6. HARRISON, Matt. **Machine Learning – Guia de Referência Rápida**: trabalhando com dados estruturados em Python. Tradução de Lúcia A. Kinoshita. São Paulo: Novatec Editora, 2020. ISBN 978-85-7522-817-3.
-
-7. KLEIN, Bernd. **Machine Learning with Python Tutorial**. Bodenseo, 2021. Disponível em: <https://www.python-course.eu/>.
-
-8. KREUZBERGER, Dominik; KÜHL, Niklas; HIRSCHL, Sebastian. **Machine Learning Operations (MLOps)**: Overview, Definition, and Architecture. *arXiv preprint arXiv:2205.02302v3*, 2022. Disponível em: <https://arxiv.org/abs/2205.02302>.
-
-9. MCKINNEY, Wes. **Python for Data Analysis**: Data Wrangling with pandas, NumPy, and Jupyter. 3. ed. Boston: O'Reilly Media, Inc., 2022. ISBN 978-1-098-10403-0.
-
-10. MÜLLER, Andreas C.; GUIDO, Sarah. **Introduction to Machine Learning with Python**: A Guide for Data Scientists. Boston: O'Reilly Media, Inc., 2017. ISBN 978-1-449-36941-5.
-
+6. HARRISON, Matt. **Machine Learning – Guia de Referência Rápida**: trabalhando com dados estruturados em Python. Tradução de Lúcia A. Kinoshita. São Paulo: Novatec Editora, 2020.
+7. KLEIN, Bernd. **Machine Learning with Python Tutorial**. Bodenseo, 2021.
+8. KREUZBERGER, Dominik; KÜHL, Niklas; HIRSCHL, Sebastian. **Machine Learning Operations (MLOps)**: Overview, Definition, and Architecture. *arXiv preprint arXiv:2205.02302v3*, 2022.
+9. MCKINNEY, Wes. **Python for Data Analysis**: Data Wrangling with pandas, NumPy, and Jupyter. 3. ed. Boston: O'Reilly Media, Inc., 2022.
+10. MÜLLER, Andreas C.; GUIDO, Sarah. **Introduction to Machine Learning with Python**: A Guide for Data Scientists. Boston: O'Reilly Media, Inc., 2017.
 11. OLGA, Arthur Quintella de Mello; MONTEIRO, Gabriel Lopes; LEITE, Guilherme Peres; LIMA, Vinicius Gomes de. **MLOps - Transformando Teoria em Prática**. São Paulo: Insper, Relatório Final de Projeto Final de Engenharia (Trabalho de Conclusão de Curso), 2021.
-
-12. RUN:AI. **Complete Guide to MLOps**: Why is MLOps Important? Closing the Loop with Machine Learning Operations. Run:ai, 2023. Disponível em: <https://www.run.ai/>.
-
+12. RUN:AI. **Complete Guide to MLOps**: Why is MLOps Important? Closing the Loop with Machine Learning Operations. Run:ai, 2023.
 13. SANTANDREA, Alan Souza. **MLOps**: introdução ao tema e estudo de caso. Ouro Preto: Escola de Minas, Universidade Federal de Ouro Preto, Monografia de Graduação em Engenharia de Controle e Automação, 2022.
-
 14. SPOLAOR, Max; MILLER, Trisha; ARCHULETA, Michelle; WILSON, Drew. **Machine Learning Security Operations (MLSecOps)**. Space-ISAC White Paper, 2023.
-
-15. VENIGALLA, Krishna Chaitanya. **MLSecOps**: A Comprehensive Framework for Secure Machine Learning Operations. *Journal of Information Systems Engineering and Management*, v. 11, n. 2s, p. 427-434, 2026. e-ISSN: 2468-4376.
+15. VENIGALLA, Krishna Chaitanya. **MLSecOps**: A Comprehensive Framework for Secure Machine Learning Operations. *Journal of Information Systems Engineering and Management*, v. 11, n. 2s, p. 427-434, 2026.
