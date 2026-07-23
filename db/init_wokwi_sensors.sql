@@ -1,17 +1,4 @@
-CREATE TABLE IF NOT EXISTS telemetry (
-    id SERIAL PRIMARY KEY,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    temperature NUMERIC(4, 1),
-    humidity NUMERIC(4, 1),
-    precipitation NUMERIC(4, 1),
-    pressure NUMERIC(5, 1),
-    risk_level VARCHAR(20)
-);
-
--- Index for querying recent telemetry quickly
-CREATE INDEX IF NOT EXISTS idx_telemetry_timestamp ON telemetry (timestamp DESC);
-
--- Tabela dedicada de telemetria Wokwi por bairro
+-- Inicialização da tabela dedicada de telemetria Wokwi por bairro
 CREATE TABLE IF NOT EXISTS wokwi_bairros_telemetria (
     id SERIAL PRIMARY KEY,
     bairro_nome VARCHAR(50) NOT NULL,
@@ -26,4 +13,3 @@ CREATE TABLE IF NOT EXISTS wokwi_bairros_telemetria (
 
 CREATE INDEX IF NOT EXISTS idx_wokwi_bairro ON wokwi_bairros_telemetria(bairro_nome);
 CREATE INDEX IF NOT EXISTS idx_wokwi_captura ON wokwi_bairros_telemetria(capturado_at DESC);
-

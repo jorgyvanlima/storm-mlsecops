@@ -1,7 +1,7 @@
 # backend/main.py
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 import paho.mqtt.client as mqtt
 import joblib
 import os
@@ -115,13 +115,30 @@ def startup_event():
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_realtime_city ON realtime_telemetry(city_name);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_realtime_captured_at ON realtime_telemetry(captured_at DESC);")
+        # Initialize wokwi_bairros_telemetria table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS wokwi_bairros_telemetria (
+                id SERIAL PRIMARY KEY,
+                bairro_nome VARCHAR(50) NOT NULL,
+                temperatura NUMERIC(5,2) NOT NULL,
+                umidade NUMERIC(5,2) NOT NULL,
+                chuva_simulada NUMERIC(5,2) DEFAULT 0.0,
+                pressao_simulada NUMERIC(6,2) DEFAULT 1013.25,
+                nivel_risco_calculado VARCHAR(20) NOT NULL,
+                enviado_por VARCHAR(50) DEFAULT 'Wokwi ESP32',
+                capturado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_wokwi_bairro ON wokwi_bairros_telemetria(bairro_nome);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_wokwi_captura ON wokwi_bairros_telemetria(capturado_at DESC);")
         conn.commit()
         cursor.close()
         conn.close()
-        add_log("Tabela 'realtime_telemetry' inicializada com sucesso.", "DB")
+        add_log("Tabelas 'realtime_telemetry' e 'wokwi_bairros_telemetria' inicializadas.", "DB")
     except Exception as e:
-        logger.error(f"[-] Falha ao inicializar tabela realtime_telemetry: {e}")
-        add_log(f"Falha ao inicializar tabela realtime_telemetry: {e}", "ERROR")
+        logger.error(f"[-] Falha ao inicializar tabelas do banco: {e}")
+        add_log(f"Falha ao inicializar tabelas do banco: {e}", "ERROR")
+
 
     
     # Retry model loading a few times in case the trainer is still writing
@@ -191,6 +208,28 @@ class TelemetryData(BaseModel):
     humidity: float = Field(..., ge=0.0, le=100.0)
     precipitation: float = Field(..., ge=0.0)
     pressure: float = Field(..., ge=980.0, le=1030.0)
+
+# Sanitizador de Ingestão de Telemetria do Wokwi contra Data Poisoning (ML02)
+class WokwiTelemetrySanitizer(BaseModel):
+    bairro: str = Field(..., max_length=50)
+    temperature: float
+    humidity: float
+    precipitation: float = Field(default=0.0)
+    pressure: float = Field(default=1013.25)
+
+    @validator('temperature')
+    def validate_temperature(cls, v):
+        # Limites físicos da Amazônia equatorial contra envenenamento (ML02)
+        if not (-5.0 <= v <= 55.0):
+            raise ValueError(f"Temperatura {v}°C viola os limites físicos permitidos.")
+        return v
+
+    @validator('humidity')
+    def validate_humidity(cls, v):
+        if not (0.0 <= v <= 100.0):
+            raise ValueError(f"Umidade {v}% está fora da faixa operacional de 0-100%.")
+        return v
+
 
 # Lógica determinística de contingência local para os bairros de Belém-PA [121]
 def calculate_neighborhood_floods_failsafe(precipitation: float):
@@ -308,12 +347,112 @@ async def process_telemetry_flow(temp: float, humidity: float, precipitation: fl
         "data": payload
     })
 
+def log_security_incident(msg: str):
+    add_log(msg, "WARN")
+    logger.warning(msg)
+
+async def process_wokwi_telemetry(payload_dict: dict, source: str = "Wokwi ESP32 Sensor"):
+    try:
+        # 1. Validar e sanitizar dados via Pydantic (Proteção ML02 - Data Poisoning)
+        sanitized = WokwiTelemetrySanitizer(
+            bairro=payload_dict.get("bairro", payload_dict.get("bairro_nome", payload_dict.get("neighborhood", "Desconhecido"))),
+            temperature=float(payload_dict.get("temperature", payload_dict.get("temperatura", payload_dict.get("temp", 0.0)))),
+            humidity=float(payload_dict.get("humidity", payload_dict.get("umidade", payload_dict.get("umid", 0.0)))),
+            precipitation=float(payload_dict.get("precipitation", payload_dict.get("chuva_simulada", payload_dict.get("precip", 0.0)))),
+            pressure=float(payload_dict.get("pressure", payload_dict.get("pressao_simulada", payload_dict.get("press", 1013.25))))
+        )
+        
+        # 2. Executar a inferência preditiva via K-Means (com fallback local seguro se PKL indisponível)
+        risk_level = "Indefinido"
+        if not fail_safe_mode and model is not None and scaler is not None:
+            try:
+                input_features = np.array([[sanitized.temperature, sanitized.humidity, sanitized.precipitation, sanitized.pressure]])
+                scaled = scaler.transform(input_features)
+                cluster = model.predict(scaled)[0]
+                centers = scaler.inverse_transform(model.cluster_centers_)
+                precip_means = centers[:, 2]
+                sorted_clusters = np.argsort(precip_means)
+                mapping = {
+                    sorted_clusters[0]: "Baixo",
+                    sorted_clusters[1]: "Moderado",
+                    sorted_clusters[2]: "Alto"
+                }
+                risk_level = mapping.get(cluster, "Indefinido")
+            except Exception as e:
+                logger.error(f"Erro na inferência da telemetria Wokwi: {e}")
+                if sanitized.precipitation >= 15.0 or sanitized.humidity >= 88.0:
+                    risk_level = "Alto"
+                elif sanitized.precipitation >= 2.0 or sanitized.humidity >= 75.0:
+                    risk_level = "Moderado"
+                else:
+                    risk_level = "Baixo"
+        else:
+            if sanitized.precipitation >= 15.0 or sanitized.humidity >= 88.0:
+                risk_level = "Alto"
+            elif sanitized.precipitation >= 2.0 or sanitized.humidity >= 75.0:
+                risk_level = "Moderado"
+            else:
+                risk_level = "Baixo"
+
+        # 3. Conexão parametrizada com o PostgreSQL para evitar SQL Injection (SQLi)
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        query = """
+            INSERT INTO wokwi_bairros_telemetria 
+            (bairro_nome, temperatura, umidade, chuva_simulada, pressao_simulada, nivel_risco_calculado, enviado_por) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (
+            sanitized.bairro,
+            sanitized.temperature,
+            sanitized.humidity,
+            sanitized.precipitation,
+            sanitized.pressure,
+            risk_level,
+            source
+        ))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        captured_at_str = datetime.now().isoformat()
+        add_log(f"Wokwi Sensor Ingestão: Bairro {sanitized.bairro} ({sanitized.temperature}°C, {sanitized.humidity}%) -> Risco: {risk_level}", "IOT")
+
+        # 4. Transmitir via WebSocket dinâmico para os painéis
+        await manager.broadcast({
+            "type": "wokwi_sensor_update",
+            "data": {
+                "bairro": sanitized.bairro,
+                "temperature": sanitized.temperature,
+                "humidity": sanitized.humidity,
+                "precipitation": sanitized.precipitation,
+                "pressure": sanitized.pressure,
+                "risk_level": risk_level,
+                "captured_at": captured_at_str,
+                "source": source
+            }
+        })
+        
+        return {
+            "status": "success",
+            "sanitized": sanitized.dict(),
+            "risk_level": risk_level,
+            "captured_at": captured_at_str
+        }
+
+    except Exception as e:
+        error_msg = f"ALERTA MLSecOps - Bloqueio na ingestão de telemetria Wokwi: {str(e)}"
+        log_security_incident(error_msg)
+        raise HTTPException(status_code=400, detail=error_msg)
+
 # --- MQTT client event callbacks ---
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         logger.info("Connected to MQTT Broker.")
         client.subscribe(MQTT_TOPIC_TELEMETRY)
-        logger.info(f"Subscribed to topic: {MQTT_TOPIC_TELEMETRY}")
+        client.subscribe("storm/wokwi/telemetry")
+        client.subscribe("wokwi/telemetry")
+        logger.info(f"Subscribed to topics: {MQTT_TOPIC_TELEMETRY}, storm/wokwi/telemetry")
     else:
         logger.error(f"MQTT connection failed with code {rc}")
 
@@ -322,6 +461,16 @@ def on_message(client, userdata, msg):
         payload_str = msg.payload.decode('utf-8')
         logger.info(f"MQTT Message received on topic {msg.topic}: {payload_str}")
         
+        # Ingestão Wokwi via MQTT
+        if "wokwi" in msg.topic or (payload_str.startswith("{") and ("bairro" in payload_str or "bairro_nome" in payload_str)):
+            data = json.loads(payload_str)
+            loop = app.state.loop
+            asyncio.run_coroutine_threadsafe(
+                process_wokwi_telemetry(data, source="Wokwi ESP32 MQTT"),
+                loop
+            )
+            return
+
         # Check formatting: JSON vs URL-encoded (ThingSpeak style)
         if payload_str.startswith("{"):
             data = json.loads(payload_str)
@@ -348,6 +497,7 @@ def on_message(client, userdata, msg):
         )
     except Exception as e:
         logger.error(f"Error processing MQTT message: {e}")
+
 
 # --- REST Endpoints ---
 @app.get("/status")
@@ -395,6 +545,73 @@ async def get_telemetry():
 async def post_telemetry(payload: TelemetryData):
     await process_telemetry_flow(payload.temperature, payload.humidity, payload.precipitation, payload.pressure)
     return {"status": "success"}
+
+# --- WOKWI SENSOR REST ENDPOINTS ---
+@app.post("/api/wokwi/telemetry")
+async def post_wokwi_telemetry(payload: dict):
+    return await process_wokwi_telemetry(payload, source="Wokwi ESP32 REST API")
+
+@app.get("/api/wokwi/telemetry")
+async def get_wokwi_telemetry():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, bairro_nome, temperatura, umidade, chuva_simulada, pressao_simulada, nivel_risco_calculado, enviado_por, capturado_at 
+            FROM wokwi_bairros_telemetria 
+            ORDER BY capturado_at DESC LIMIT 50;
+        """)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        history = []
+        for r in rows:
+            history.append({
+                "id": r[0],
+                "bairro": r[1],
+                "temperature": float(r[2]),
+                "humidity": float(r[3]),
+                "precipitation": float(r[4]),
+                "pressure": float(r[5]),
+                "risk_level": r[6],
+                "enviado_por": r[7],
+                "captured_at": r[8].isoformat()
+            })
+        return history
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/wokwi/bairros")
+async def get_wokwi_bairros():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT DISTINCT ON (bairro_nome) 
+                bairro_nome, temperatura, umidade, chuva_simulada, pressao_simulada, nivel_risco_calculado, capturado_at 
+            FROM wokwi_bairros_telemetria 
+            ORDER BY bairro_nome, capturado_at DESC;
+        """)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        bairros = {}
+        for r in rows:
+            bairros[r[0]] = {
+                "bairro": r[0],
+                "temperature": float(r[1]),
+                "humidity": float(r[2]),
+                "precipitation": float(r[3]),
+                "pressure": float(r[4]),
+                "risk_level": r[5],
+                "captured_at": r[6].isoformat()
+            }
+        return bairros
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/simulator/config")
 async def set_simulator_preset(payload: dict):

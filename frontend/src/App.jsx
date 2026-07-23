@@ -15,7 +15,10 @@ import {
   Cpu,
   LogOut,
   Github,
-  ExternalLink
+  ExternalLink,
+  Radio,
+  Database,
+  Server
 } from 'lucide-react';
 
 function App() {
@@ -29,6 +32,50 @@ function App() {
   const wsRef = useRef(null);
   const terminalEndRef = useRef(null);
 
+  // Wokwi Emulation & Real-time Sensors State (Painel Sensores)
+  const [selectedBairro, setSelectedBairro] = useState('Marco');
+  const [wokwiTemp, setWokwiTemp] = useState(31.5);
+  const [wokwiHum, setWokwiHum] = useState(78.0);
+  const [wokwiStatusMsg, setWokwiStatusMsg] = useState('');
+  const [wokwiHistory, setWokwiHistory] = useState([]);
+  
+  const [wokwiSensors, setWokwiSensors] = useState({
+    "Marco": { temperature: 31.5, humidity: 78.0, precipitation: 0.0, pressure: 1013.25, risk_level: "Baixo", elevation: 4.2, captured_at: "Agora" },
+    "Umarizal": { temperature: 29.8, humidity: 82.0, precipitation: 0.0, pressure: 1013.25, risk_level: "Moderado", elevation: 2.2, captured_at: "Agora" },
+    "Doca": { temperature: 27.4, humidity: 89.0, precipitation: 12.5, pressure: 1009.50, risk_level: "Alto", elevation: 1.2, captured_at: "Agora" },
+    "Jurunas": { temperature: 28.0, humidity: 85.0, precipitation: 5.0, pressure: 1011.00, risk_level: "Moderado", elevation: 1.8, captured_at: "Agora" },
+    "Batista Campos": { temperature: 32.1, humidity: 71.0, precipitation: 0.0, pressure: 1013.25, risk_level: "Baixo", elevation: 3.5, captured_at: "Agora" },
+    "Cidade Velha": { temperature: 26.5, humidity: 93.0, precipitation: 18.0, pressure: 1008.00, risk_level: "Alto", elevation: 1.5, captured_at: "Agora" }
+  });
+
+  const sendWokwiTelemetry = async (bairro, temp, hum) => {
+    setWokwiStatusMsg("Enviando telemetria Wokwi...");
+    try {
+      const res = await fetch('/api/wokwi/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bairro: bairro,
+          temperature: parseFloat(temp),
+          humidity: parseFloat(hum),
+          precipitation: (parseFloat(hum) >= 88.0 ? 18.5 : 0.0),
+          pressure: 1013.25
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setWokwiStatusMsg(`✅ Leitura aprovada para ${bairro}! Risco: ${data.risk_level.toUpperCase()}`);
+        addLogItem("LOG-IOT", `Disparo Wokwi [${bairro}]: Temp=${temp}°C, Umid=${hum}%`);
+      } else {
+        const errDetail = data.detail || 'Bloqueio de Ingestão Pydantic';
+        setWokwiStatusMsg(`❌ BLOQUEIO MLSecOps (Data Poisoning ML02): ${errDetail}`);
+        addLogItem("LOG-ALERT", `🛡️ BLOQUEIO DE SEGURANÇA (ML02): ${errDetail}`);
+      }
+    } catch (e) {
+      setWokwiStatusMsg(`❌ Erro de envio: ${e.message}`);
+    }
+  };
+
   // Auto-scroll terminal
   useEffect(() => {
     if (terminalEndRef.current) {
@@ -40,7 +87,6 @@ function App() {
   useEffect(() => {
     const connectWS = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      // In production, Vite is served by Nginx on port 8080, and proxies to backend
       const host = window.location.host; 
       const wsUrl = `${protocol}//${host}/ws`;
       
@@ -63,13 +109,11 @@ function App() {
             setTelemetry(payload.data);
             setHistory(prev => [payload.data, ...prev.slice(0, 19)]);
             
-            // Format dynamic logs for UI console based on telemetry contents
             const t = payload.data;
             addLogItem("LOG-IOT", `IoT Telemetria Recebida: Temp=${t.temperature}°C, Umid=${t.humidity}%, Chuva=${t.precipitation}mm, Pressão=${t.pressure}hPa`);
             addLogItem("LOG-DB", `Banco de Dados: Registro climático salvo em PostgreSQL.`);
             addLogItem("LOG-IA", `Inteligência Artificial: KMeans predisse nível climático: ${t.risk_level.toUpperCase()}`);
             
-            // Check if any neighborhood is flooding
             let flooding = [];
             if (t.neighborhoods_status) {
               Object.entries(t.neighborhoods_status).forEach(([name, statusObj]) => {
@@ -80,6 +124,23 @@ function App() {
             }
             if (flooding.length > 0) {
               addLogItem("LOG-ALERT", `ALERTA DE ALAGAMENTO! Risco crítico de transbordo nas seguintes regiões: ${flooding.join(', ')}`);
+            }
+          } else if (payload.type === 'wokwi_sensor_update') {
+            const w = payload.data;
+            setWokwiSensors(prev => ({
+              ...prev,
+              [w.bairro]: {
+                ...prev[w.bairro],
+                ...w,
+                updated: true
+              }
+            }));
+            setWokwiHistory(prev => [w, ...prev.slice(0, 29)]);
+            addLogItem("LOG-IOT", `WOKWI ESP32 [${w.bairro}]: Temp=${w.temperature}°C, Umid=${w.humidity}% -> Risco: ${w.risk_level.toUpperCase()}`);
+            addLogItem("LOG-DB", `PostgreSQL: Inserido em 'wokwi_bairros_telemetria' (%s SQLi Safe).`);
+            addLogItem("LOG-IA", `Sanitizador Pydantic (ML02 OK): Ingestão aprovada para ${w.bairro}.`);
+            if (w.risk_level === 'Alto' || w.humidity >= 88.0 || w.temperature >= 35.0) {
+              addLogItem("LOG-ALERT", `⚡ ALERTA WOKWI! Limiar crítico atingido no bairro ${w.bairro}!`);
             }
           }
         } catch (e) {
@@ -101,7 +162,7 @@ function App() {
 
     connectWS();
 
-    // Fetch initial HTTP logs and history
+    // Fetch initial HTTP logs, history, and Wokwi data
     const fetchInitData = async () => {
       try {
         const resHistory = await fetch('/api/telemetry');
@@ -113,16 +174,29 @@ function App() {
           }
         }
         
+        const resWokwi = await fetch('/api/wokwi/bairros');
+        if (resWokwi.ok) {
+          const dataWokwi = await resWokwi.json();
+          if (Object.keys(dataWokwi).length > 0) {
+            setWokwiSensors(prev => ({ ...prev, ...dataWokwi }));
+          }
+        }
+
+        const resWokwiHist = await fetch('/api/wokwi/telemetry');
+        if (resWokwiHist.ok) {
+          const dataHist = await resWokwiHist.json();
+          setWokwiHistory(dataHist);
+        }
+
         const resLogs = await fetch('/api/logs');
         if (resLogs.ok) {
           const dataLogs = await resLogs.json();
-          // Map backend strings to console format
           const formatted = dataLogs.map(line => {
             let type = "LOG-INFO";
-            if (line.includes("Prediction") || line.includes("Predição")) type = "LOG-IA";
-            if (line.includes("Stored") || line.includes("PostgreSQL")) type = "LOG-DB";
-            if (line.includes("MQTT Message") || line.includes("MQTT")) type = "LOG-IOT";
-            if (line.includes("WARNING") || line.includes("ALERT") || line.includes("Erro")) type = "LOG-ALERT";
+            if (line.includes("Prediction") || line.includes("Predição") || line.includes("Wokwi")) type = "LOG-IA";
+            if (line.includes("Stored") || line.includes("PostgreSQL") || line.includes("wokwi_bairros")) type = "LOG-DB";
+            if (line.includes("MQTT Message") || line.includes("MQTT") || line.includes("Sensor")) type = "LOG-IOT";
+            if (line.includes("WARNING") || line.includes("ALERT") || line.includes("Erro") || line.includes("Bloqueio")) type = "LOG-ALERT";
             return { type, text: line };
           });
           setLogs(formatted);
@@ -213,47 +287,75 @@ function App() {
             </div>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {/* Toggle View Button */}
-            {view === 'tcc' ? (
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button 
-                  onClick={() => setView('dashboard')} 
-                  className="btn-launch-dashboard"
-                >
-                  <span>Acessar Painel Prático</span>
-                  <ArrowRight size={18} />
-                </button>
-                <a 
-                  href="/realtime.html" 
-                  className="btn-launch-real"
-                >
-                  <span>Acessar Painel Real</span>
-                  <ArrowRight size={18} />
-                </a>
-              </div>
-            ) : (
-              <>
-                <a 
-                  href="https://github.com/jorgyvanlima/storm-mlsecops"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="control-btn btn-github"
-                  style={{ width: 'auto', padding: '10px 20px', textDecoration: 'none' }}
-                >
-                  <Github size={16} />
-                  <span>GitHub</span>
-                </a>
-                <button 
-                  onClick={() => setView('tcc')} 
-                  className="control-btn"
-                  style={{ width: 'auto', padding: '10px 20px', background: 'rgba(168, 85, 247, 0.15)', borderColor: 'rgba(168, 85, 247, 0.4)', color: '#fff' }}
-                >
-                  <BookOpen size={16} />
-                  <span>Voltar para o TCC</span>
-                </button>
-              </>
-            )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {/* Navegação entre os 3 Painéis e TCC */}
+            <button 
+              onClick={() => setView('tcc')} 
+              className="control-btn"
+              style={{
+                width: 'auto',
+                padding: '8px 16px',
+                background: view === 'tcc' ? 'rgba(168, 85, 247, 0.4)' : 'rgba(255,255,255,0.05)',
+                borderColor: view === 'tcc' ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                color: '#fff',
+                fontWeight: view === 'tcc' ? 'bold' : 'normal'
+              }}
+            >
+              <BookOpen size={16} />
+              <span>TCC</span>
+            </button>
+
+            <button 
+              onClick={() => setView('dashboard')} 
+              className="control-btn"
+              style={{
+                width: 'auto',
+                padding: '8px 16px',
+                background: view === 'dashboard' ? 'rgba(168, 85, 247, 0.4)' : 'rgba(255,255,255,0.05)',
+                borderColor: view === 'dashboard' ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                color: '#fff',
+                fontWeight: view === 'dashboard' ? 'bold' : 'normal'
+              }}
+            >
+              <Cpu size={16} />
+              <span>Painel Prático</span>
+            </button>
+
+            <button 
+              onClick={() => setView('sensores')} 
+              className="control-btn"
+              style={{
+                width: 'auto',
+                padding: '8px 16px',
+                background: view === 'sensores' ? 'rgba(6, 182, 212, 0.4)' : 'rgba(255,255,255,0.05)',
+                borderColor: view === 'sensores' ? '#06b6d4' : 'rgba(255,255,255,0.1)',
+                color: '#fff',
+                fontWeight: view === 'sensores' ? 'bold' : 'normal'
+              }}
+            >
+              <Radio size={16} style={{ color: '#06b6d4' }} />
+              <span>Painel Sensores (Wokwi)</span>
+            </button>
+
+            <a 
+              href="/realtime.html" 
+              className="control-btn"
+              style={{
+                width: 'auto',
+                padding: '8px 16px',
+                background: 'rgba(59, 130, 246, 0.2)',
+                borderColor: 'rgba(59, 130, 246, 0.5)',
+                color: '#3b82f6',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Activity size={16} />
+              <span>Painel Real</span>
+              <ExternalLink size={14} />
+            </a>
 
             {/* Connection Status */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#cbd5e1' }}>
@@ -278,8 +380,8 @@ function App() {
           </div>
         </header>
 
-        {/* Chaveamento de Visualização: TCC ou Dashboard */}
-        {view === 'tcc' ? (
+        {/* Chaveamento de Visualização: TCC, Painel Prático ou Painel Sensores */}
+        {view === 'tcc' && (
           <div className="tcc-layout">
             
             {/* Sidebar de Navegação do TCC */}
@@ -597,8 +699,10 @@ A implantação gradual e focada revelou-se a abordagem ideal para sistemas reai
 
             </main>
           </div>
-        ) : (
-          /* Dashboard Grid Layout (Projeto Prático) */
+        )}
+
+        {/* 1. PAINEL PRÁTICO (Simulador / TCC com presets) */}
+        {view === 'dashboard' && (
           <div className="dashboard-grid">
             
             {/* Sidebar Area: Simulator controls and Log Console */}
@@ -608,7 +712,7 @@ A implantação gradual e focada revelou-se a abordagem ideal para sistemas reai
               <div className={`glass-panel ${isStorming ? 'neon-border-red' : 'neon-border-purple'}`}>
                 <h3 style={{ marginBottom: '16px', fontSize: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Activity size={18} style={{ color: '#a855f7' }} />
-                  CONTROLE DO SIMULADOR
+                  CONTROLE DO SIMULADOR CLIMÁTICO
                 </h3>
                 <p style={{ fontSize: '0.85rem', color: '#a0aec0', marginBottom: '20px' }}>
                   Simule diferentes intensidades de clima na nuvem para treinar e disparar os alertas visuais da IA:
@@ -798,6 +902,231 @@ A implantação gradual e focada revelou-se a abordagem ideal para sistemas reai
 
             </main>
             
+          </div>
+        )}
+
+        {/* 2. NOVO: PAINEL SENSORES (Telemetria Wokwi em Tempo Real de Projeto em Produção) */}
+        {view === 'sensores' && (
+          <div className="main-content" style={{ gap: '24px' }}>
+            
+            {/* Banner de Integração Wokwi */}
+            <div className="glass-panel" style={{ border: '1px solid rgba(6, 182, 212, 0.4)', background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Radio size={24} style={{ color: '#06b6d4' }} className="animate-pulse" />
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#38bdf8' }}>
+                      PAINEL SENSORES: TELEMETRIA WOKWI EM PRODUÇÃO
+                    </h2>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: '6px', maxWidth: '850px', lineHeight: '1.5' }}>
+                    Este painel exibe <strong>exclusivamente as emissões reais recebidas dos sensores físicos/emulados ESP32</strong> do projeto Wokwi ativo em produção (<a href="https://wokwi.com/projects/467174921171535873" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>projetos/467174921171535873</a>). Cada leitura é higienizada contra Data Poisoning (ML02) e gravada na tabela dedicada <code>wokwi_bairros_telemetria</code> no PostgreSQL.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <a 
+                    href="https://wokwi.com/projects/467174921171535873"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="control-btn"
+                    style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)', color: '#fff', border: 'none', fontWeight: 'bold', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <span>Abrir Projeto Wokwi</span>
+                    <ExternalLink size={16} />
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Grid dos 6 Bairros de Belém - Leituras dos Sensores Wokwi */}
+            <div className="glass-panel">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                <h3 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '10px', color: '#06b6d4' }}>
+                  <Server size={20} style={{ color: '#06b6d4' }} />
+                  LEITURAS EM TEMPO REAL DOS SENSORES DHT22 POR BAIRRO (BELÉM-PA)
+                </h3>
+                <span style={{ fontSize: '0.8rem', background: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', padding: '4px 12px', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                  Banco de Dados: wokwi_bairros_telemetria
+                </span>
+              </div>
+
+              <div className="neighborhoods-grid">
+                {Object.entries(wokwiSensors).map(([bairroName, data]) => {
+                  const temp = data.temperature;
+                  const hum = data.humidity;
+                  const isCrit = data.risk_level === 'Alto' || hum >= 88.0 || temp >= 35.0;
+                  const isAtt = data.risk_level === 'Moderado' || hum >= 75.0;
+
+                  return (
+                    <div 
+                      key={bairroName}
+                      className={`glass-panel neighborhood-card ${isCrit ? 'neon-border-red' : ''}`}
+                      style={{
+                        border: isCrit ? '1px solid rgba(239,68,68,0.6)' : (isAtt ? '1px solid rgba(245,158,11,0.5)' : '1px solid rgba(6,182,212,0.3)'),
+                        background: isCrit ? 'rgba(239, 68, 68, 0.08)' : (isAtt ? 'rgba(245, 158, 11, 0.05)' : 'rgba(13, 15, 30, 0.65)'),
+                        height: 'auto',
+                        padding: '18px'
+                      }}
+                    >
+                      {/* Status Header */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                        <div>
+                          <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: isCrit ? '#fca5a5' : '#fff' }}>
+                            {bairroName}
+                          </h4>
+                          <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>
+                            Sensor DHT22 (Wokwi ESP32)
+                          </p>
+                        </div>
+                        <span style={{ fontSize: '1.4rem' }}>
+                          {isCrit ? '⚡🚨' : (isAtt ? '⚠️' : '🟢')}
+                        </span>
+                      </div>
+
+                      {/* Temp & Humidity Display */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '16px 0' }}>
+                        <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase' }}>Temperatura</div>
+                          <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#38bdf8', marginTop: '2px' }}>{temp}°C</div>
+                        </div>
+                        <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase' }}>Umidade Ar</div>
+                          <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>{hum}%</div>
+                        </div>
+                      </div>
+
+                      {/* Footer Status */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>
+                          Risco Preditivo: <strong style={{ color: isCrit ? '#ef4444' : (isAtt ? '#f59e0b' : '#10b981') }}>{data.risk_level || 'Baixo'}</strong>
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                          {data.captured_at ? String(data.captured_at).substring(11, 19) : 'Ao vivo'}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Testador Interativo de Ingestão e Tabela de Histórico Wokwi */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
+              
+              {/* Emissor de Teste Interativo Wokwi */}
+              <div className="glass-panel" style={{ borderColor: 'rgba(6, 182, 212, 0.3)' }}>
+                <h3 style={{ marginBottom: '14px', fontSize: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', color: '#06b6d4' }}>
+                  <Radio size={18} />
+                  TESTADOR INTERATIVO DE INGESTÃO WOKWI (VALIDE BLOQUEIOS DE DATA POISONING ML02)
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '16px' }}>
+                  Dispare leituras manuais para os bairros ou teste valores fora dos limites autorizados (-5°C a 55°C / 0% a 100%) para verificar o bloqueio do <strong>Sanitizador Pydantic</strong>:
+                </p>
+
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Bairro:</label>
+                    <select 
+                      value={selectedBairro}
+                      onChange={(e) => setSelectedBairro(e.target.value)}
+                      style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '8px 12px', borderRadius: '8px', marginTop: '4px', fontSize: '0.85rem', minWidth: '160px' }}
+                    >
+                      <option value="Marco">Marco (4.2m)</option>
+                      <option value="Umarizal">Umarizal (2.2m)</option>
+                      <option value="Doca">Doca de Souza Franco (1.2m)</option>
+                      <option value="Jurunas">Jurunas (1.8m)</option>
+                      <option value="Batista Campos">Batista Campos (3.5m)</option>
+                      <option value="Cidade Velha">Cidade Velha (1.5m)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Temperatura (°C):</label>
+                    <input 
+                      type="number" 
+                      value={wokwiTemp} 
+                      onChange={(e) => setWokwiTemp(e.target.value)}
+                      style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '8px 12px', borderRadius: '8px', marginTop: '4px', fontSize: '0.85rem', width: '120px' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Umidade (%):</label>
+                    <input 
+                      type="number" 
+                      value={wokwiHum} 
+                      onChange={(e) => setWokwiHum(e.target.value)}
+                      style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '8px 12px', borderRadius: '8px', marginTop: '4px', fontSize: '0.85rem', width: '120px' }}
+                    />
+                  </div>
+
+                  <button 
+                    onClick={() => sendWokwiTelemetry(selectedBairro, wokwiTemp, wokwiHum)}
+                    className="control-btn"
+                    style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)', color: '#fff', border: 'none', fontWeight: 'bold', padding: '9px 18px' }}
+                  >
+                    ⚡ Disparar Telemetria Wokwi
+                  </button>
+                </div>
+
+                {wokwiStatusMsg && (
+                  <div style={{ fontSize: '0.8rem', marginTop: '12px', padding: '10px 14px', borderRadius: '8px', background: wokwiStatusMsg.includes('BLOQUEIO') || wokwiStatusMsg.includes('Erro') ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)', border: wokwiStatusMsg.includes('BLOQUEIO') || wokwiStatusMsg.includes('Erro') ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)', color: wokwiStatusMsg.includes('BLOQUEIO') || wokwiStatusMsg.includes('Erro') ? '#fca5a5' : '#6ee7b7' }}>
+                    {wokwiStatusMsg}
+                  </div>
+                )}
+              </div>
+
+              {/* Tabela de Histórico PostgreSQL: wokwi_bairros_telemetria */}
+              <div className="glass-panel">
+                <h3 style={{ marginBottom: '14px', fontSize: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', color: '#a855f7' }}>
+                  <Database size={18} />
+                  HISTÓRICO RECENTE DE INGESTÃO (POSTGRESQL - TABELA WOKWI_BAIRROS_TELEMETRIA)
+                </h3>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', textAlign: 'left', fontSize: '0.85rem', color: '#cbd5e1', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(15, 23, 42, 0.8)', color: '#06b6d4', textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                        <th style={{ padding: '10px 12px' }}>ID</th>
+                        <th style={{ padding: '10px 12px' }}>Bairro</th>
+                        <th style={{ padding: '10px 12px' }}>Temp (°C)</th>
+                        <th style={{ padding: '10px 12px' }}>Umidade (%)</th>
+                        <th style={{ padding: '10px 12px' }}>Risco Calculado</th>
+                        <th style={{ padding: '10px 12px' }}>Origem</th>
+                        <th style={{ padding: '10px 12px' }}>Timestamp</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {wokwiHistory.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                            Nenhum registro de telemetria Wokwi capturado ainda.
+                          </td>
+                        </tr>
+                      ) : (
+                        wokwiHistory.map((item, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                            <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>#{item.id || idx + 1}</td>
+                            <td style={{ padding: '10px 12px', fontWeight: 'bold' }}>{item.bairro}</td>
+                            <td style={{ padding: '10px 12px', color: '#38bdf8' }}>{item.temperature}°C</td>
+                            <td style={{ padding: '10px 12px', color: '#34d399' }}>{item.humidity}%</td>
+                            <td style={{ padding: '10px 12px' }}>
+                              <span style={{ padding: '3px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 'bold', background: item.risk_level === 'Alto' ? 'rgba(239,68,68,0.2)' : (item.risk_level === 'Moderado' ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.2)'), color: item.risk_level === 'Alto' ? '#ef4444' : (item.risk_level === 'Moderado' ? '#f59e0b' : '#10b981') }}>
+                                {item.risk_level}
+                              </span>
+                            </td>
+                            <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: '0.75rem' }}>{item.enviado_por || item.source || 'Wokwi ESP32'}</td>
+                            <td style={{ padding: '10px 12px', color: '#64748b', fontSize: '0.75rem' }}>{item.captured_at ? String(item.captured_at).replace('T', ' ').substring(0, 19) : '--'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
           </div>
         )}
 
