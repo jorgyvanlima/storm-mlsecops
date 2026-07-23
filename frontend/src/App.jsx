@@ -454,7 +454,7 @@ function App() {
                     </div>
                     <div className="academic-meta-item">
                       <div className="academic-meta-label">Programa</div>
-                      <div className="academic-meta-val">Especialização em Sistemas de Segurança Integrada da Informação e Cibersegurança</div>
+                      <div className="academic-meta-val">Curso de Especialização em Sistemas de Segurança Integrada da Informação e Cibersegurança</div>
                     </div>
                     <div className="academic-meta-item">
                       <div className="academic-meta-label">Autor</div>
@@ -466,7 +466,7 @@ function App() {
                     </div>
                     <div className="academic-meta-item">
                       <div className="academic-meta-label">Data de Defesa</div>
-                      <div className="academic-meta-val">Julho de 2026</div>
+                      <div className="academic-meta-val">Belém-PA, Julho de 2026</div>
                     </div>
                   </div>
 
@@ -502,7 +502,7 @@ A cidade de Belém, capital do estado do Pará, apresenta características geogr
 O projeto original <strong>STORM</strong> foi desenvolvido de forma coletiva por discentes do curso de pós-graduação em Cibersegurança da UFPA. Ele consistia em um ecossistema conteinerizado voltado à ingestão e processamento de telemetrias simuladas por meio de um broker MQTT e uma API de inferência utilizando Inteligência Artificial (<em>K-Means</em>). No entanto, em sua concepção original, o sistema desconsiderava completamente os vetores de ataque específicos voltados à manipulação lógica de IA. À medida que modelos preditivos são adotados para decisões de segurança pública e controle de infraestruturas civis críticas, a cibersegurança tradicional baseada em redes e firewalls mostra-se insuficiente.
                   </p>
                   <p className="academic-p">
-A natureza probabilística do Machine Learning abre margem para ameaças sofisticadas que atacam a integridade matemática dos dados e dos modelos de IA, tais como o envenenamento de dados (<em>Data Poisoning</em>) e os ataques de evasão adversarial (<em>Evasion Attacks</em>). Para sanar estas deficiências e propor uma solução robusta no estado da arte de engenharia de segurança, este TCC apresenta a reformulação individual e a evolução do sistema original para o ecossistema <strong>STORM-MLSecOps</strong> (disponível em: https://github.com/jorgyvanlima/storm-mlsecops e implantado em VPS segura em https://storm-mlsecops.sytes.net). Esta transição envolveu a modelagem completa de ameaças da IA, a reestruturação da pipeline de dados, a implantação de um sistema de emulação de sensores reais via Wokwi e a codificação de rígidas travas criptográficas e operacionais.
+A natureza probabilística do Machine Learning abre margem para ameaças sofisticadas que atacam a integridade matemática dos dados e dos modelos de IA, tais como o envenenamento de dados (<em>Data Poisoning</em>) e os ataques de evasão adversarial (<em>Evasion Attacks</em>). Para sanar estas deficiências e propor uma solução robusta no estado da arte de engenharia de segurança, este TCC apresenta a reformulação individual e a evolução do sistema original para o ecossistema <strong>STORM-MLSecOps</strong> (disponível em: <a href="https://github.com/jorgyvanlima/storm-mlsecops" target="_blank" rel="noopener noreferrer" style={{ color: '#06b6d4' }}>https://github.com/jorgyvanlima/storm-mlsecops</a> e implantado em VPS segura em <a href="https://storm-mlsecops.sytes.net" target="_blank" rel="noopener noreferrer" style={{ color: '#06b6d4' }}>https://storm-mlsecops.sytes.net</a>). Esta transição envolveu a modelagem completa de ameaças da IA, a reestruturação da pipeline de dados, a implantação de um sistema de emulação de sensores reais via Wokwi e a codificação de rígidas travas criptográficas e operacionais.
                   </p>
 
                   <h3 className="academic-heading-2">1.3 Objetivos (Geral e Específicos) e Justificativa Técnica</h3>
