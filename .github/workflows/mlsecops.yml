@@ -61,9 +61,10 @@ jobs:
             
             cd $TARGET_DIR
             
-            # Garantir permissões do git e propriedade da pasta .git
-            echo "Suporte@MCC51" | sudo -S chown -R $USER:$USER "$TARGET_DIR" 2>/dev/null || sudo chown -R $USER:$USER "$TARGET_DIR" || true
-            sudo chmod -R 777 "$TARGET_DIR/.git" 2>/dev/null || true
+            # Garantir permissões do git, remoção de travas root e propriedade da pasta .git
+            echo "Suporte@MCC51" | sudo -S rm -f "$TARGET_DIR/.git/FETCH_HEAD" "$TARGET_DIR/.git/index.lock" 2>/dev/null || true
+            echo "Suporte@MCC51" | sudo -S chown -R $(whoami):$(whoami) "$TARGET_DIR" 2>/dev/null || sudo chown -R $(whoami):$(whoami) "$TARGET_DIR" || true
+            echo "Suporte@MCC51" | sudo -S chmod -R 777 "$TARGET_DIR/.git" 2>/dev/null || chmod -R 777 "$TARGET_DIR/.git" || true
             git config --global --add safe.directory "$TARGET_DIR" || true
             git config --global --add safe.directory '*' || true
             
