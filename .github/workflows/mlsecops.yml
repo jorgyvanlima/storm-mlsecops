@@ -61,16 +61,18 @@ jobs:
             
             cd $TARGET_DIR
             
-            # Garantir permissões do git e propriedade da pasta
-            sudo chown -R $USER:$USER $TARGET_DIR || true
+            # Garantir permissões do git e propriedade da pasta .git
+            echo "Suporte@MCC51" | sudo -S chown -R $USER:$USER "$TARGET_DIR" 2>/dev/null || sudo chown -R $USER:$USER "$TARGET_DIR" || true
+            sudo chmod -R 777 "$TARGET_DIR/.git" 2>/dev/null || true
             git config --global --add safe.directory "$TARGET_DIR" || true
+            git config --global --add safe.directory '*' || true
             
             echo "📥 Baixando atualizações do GitHub..."
             git fetch --all
             git reset --hard origin/main
             
             echo "🐳 Reconstruindo e reiniciando contêineres Docker..."
-            docker compose -f docker-compose.prod.yml build
+            docker compose -f docker-compose.prod.yml build storm-backend frontend || docker compose -f docker-compose.prod.yml build
             docker compose -f docker-compose.prod.yml up -d
             
             echo "✅ Deploy concluído com sucesso!"
