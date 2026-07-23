@@ -1,9 +1,10 @@
+import os
 import paramiko
 
-host = 'storm-mlsecops.sytes.net'
-port = 22022
-user = 'jorgyvan'
-password = 'Suporte@MCC51'
+host = os.environ.get('VPS_HOST', 'storm-mlsecops.sytes.net')
+port = int(os.environ.get('VPS_PORT', 22022))
+user = os.environ.get('VPS_USER', 'jorgyvan')
+password = os.environ.get('VPS_PASSWORD')
 target_dir = '/home/jorgyvan/storm-mlsecops'
 
 client = paramiko.SSHClient()
