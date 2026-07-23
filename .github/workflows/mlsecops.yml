@@ -56,24 +56,19 @@ jobs:
             
             if [ ! -d "$TARGET_DIR" ]; then
               echo "⚠️ Diretório não encontrado. Clonando repositório..."
-              git clone https://github.com/jorgyvanlima/storm-mlsecops.git $TARGET_DIR
+              git clone https://github.com/jorgyvanlima/storm-mlsecops.git "$TARGET_DIR"
             fi
             
-            cd $TARGET_DIR
+            cd "$TARGET_DIR"
             
-            # Garantir permissões do git, remoção de travas root e propriedade da pasta .git
-            echo "Suporte@MCC51" | sudo -S rm -f "$TARGET_DIR/.git/FETCH_HEAD" "$TARGET_DIR/.git/index.lock" 2>/dev/null || true
-            echo "Suporte@MCC51" | sudo -S chown -R $(whoami):$(whoami) "$TARGET_DIR" 2>/dev/null || sudo chown -R $(whoami):$(whoami) "$TARGET_DIR" || true
-            echo "Suporte@MCC51" | sudo -S chmod -R 777 "$TARGET_DIR/.git" 2>/dev/null || chmod -R 777 "$TARGET_DIR/.git" || true
             git config --global --add safe.directory "$TARGET_DIR" || true
-            git config --global --add safe.directory '*' || true
             
-            echo "📥 Baixando atualizações do GitHub..."
-            git fetch --all
+            echo "📥 Atualizando código-fonte do GitHub..."
+            git fetch origin main
             git reset --hard origin/main
             
-            echo "🐳 Reconstruindo e reiniciando contêineres Docker..."
-            docker compose -f docker-compose.prod.yml build storm-backend frontend || docker compose -f docker-compose.prod.yml build
-            docker compose -f docker-compose.prod.yml up -d
+            echo "🐳 Reconstruindo e reiniciando serviços Docker de produção..."
+            docker compose -f docker-compose.prod.yml build storm-backend frontend
+            docker compose -f docker-compose.prod.yml up -d storm-backend frontend
             
-            echo "✅ Deploy concluído com sucesso!"
+            echo "✅ Deploy de produção concluído com sucesso!"
