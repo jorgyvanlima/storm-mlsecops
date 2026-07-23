@@ -31,3 +31,46 @@ jobs:
     - name: Execute Testes Unitários de Segurança
       run: |
         pytest backend/tests/
+
+  deploy:
+    name: Deploy to Production VPS
+    needs: security-audit
+    # Roda o deploy apenas se os testes passaram (needs: security-audit)
+    # E apenas se o evento for um push na branch main (não faz deploy de pull requests soltos)
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            echo "🔐 Conectado ao VPS de Produção com sucesso!"
+            
+            TARGET_DIR="/home/${{ secrets.VPS_USER }}/storm-mlsecops"
+            
+            if [ ! -d "$TARGET_DIR" ]; then
+              echo "⚠️ Diretório não encontrado. Clonando repositório..."
+              git clone https://github.com/jorgyvanlima/storm-mlsecops.git $TARGET_DIR
+            fi
+            
+            cd $TARGET_DIR
+            
+            # Garantir permissões do git e propriedade da pasta
+            sudo chown -R $USER:$USER $TARGET_DIR || true
+            git config --global --add safe.directory "$TARGET_DIR" || true
+            
+            echo "📥 Baixando atualizações do GitHub..."
+            git fetch --all
+            git reset --hard origin/main
+            
+            echo "🐳 Reconstruindo e reiniciando contêineres Docker..."
+            docker compose -f docker-compose.prod.yml build
+            docker compose -f docker-compose.prod.yml up -d
+            
+            echo "✅ Deploy concluído com sucesso!"
