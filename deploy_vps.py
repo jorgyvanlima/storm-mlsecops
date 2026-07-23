@@ -12,7 +12,7 @@ client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 try:
     print("Connecting to VPS...")
-    client.connect(host, port=port, username=user, password=password, timeout=25)
+    client.connect(host, port=port, username=user, password=password, timeout=45)
     
     commands = [
         f"git config --global --add safe.directory '{target_dir}' || true",
