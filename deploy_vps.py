@@ -15,12 +15,9 @@ try:
     client.connect(host, port=port, username=user, password=password, timeout=45)
     
     commands = [
-        f"echo 'Suporte@MCC51' | sudo -S rm -f {target_dir}/.git/FETCH_HEAD {target_dir}/.git/index.lock || true",
-        f"echo 'Suporte@MCC51' | sudo -S chown -R jorgyvan:jorgyvan {target_dir}",
-        f"echo 'Suporte@MCC51' | sudo -S chmod -R 777 {target_dir}/.git",
+        f"if [ ! -d '{target_dir}/.git' ]; then rm -rf '{target_dir}' && git clone https://github.com/jorgyvanlima/storm-mlsecops.git '{target_dir}'; fi",
         f"git config --global --add safe.directory '{target_dir}' || true",
-        f"git config --global --add safe.directory '*' || true",
-        f"cd {target_dir} && git fetch --all && git reset --hard origin/main",
+        f"cd {target_dir} && git fetch origin main && git reset --hard origin/main",
         f"cd {target_dir} && docker compose -f docker-compose.prod.yml build storm-backend frontend",
         f"cd {target_dir} && docker compose -f docker-compose.prod.yml up -d storm-backend frontend",
     ]

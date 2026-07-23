@@ -54,8 +54,10 @@ jobs:
             
             TARGET_DIR="/home/${{ secrets.VPS_USER }}/storm-mlsecops"
             
-            if [ ! -d "$TARGET_DIR" ]; then
-              echo "⚠️ Diretório não encontrado. Clonando repositório..."
+            # Garantir que o repositório git exista e esteja íntegro na VPS
+            if [ ! -d "$TARGET_DIR/.git" ]; then
+              echo "⚠️ Repositório Git não encontrado em $TARGET_DIR. Clonando repositório oficial..."
+              rm -rf "$TARGET_DIR"
               git clone https://github.com/jorgyvanlima/storm-mlsecops.git "$TARGET_DIR"
             fi
             
