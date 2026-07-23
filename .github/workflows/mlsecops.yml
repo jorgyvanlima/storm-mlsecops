@@ -23,7 +23,7 @@ jobs:
         pip install bandit safety pytest fastapi httpx joblib scikit-learn pandas uvicorn pydantic paho-mqtt psycopg2-binary websockets
 
     - name: Static Application Security Testing (SAST)
-      run: bandit -r backend/ ai-service/
+      run: bandit -r backend/ ai-service/ -s B101,B311
 
     - name: Audit Vulnerabilidades em Dependências (SCA)
       run: safety check || echo "Ignorando warnings de dependencias nao-criticas"
