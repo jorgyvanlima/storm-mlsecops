@@ -38,7 +38,8 @@ jobs:
             
             cd $TARGET_DIR
             
-            # Garantir permissões do git
+            # Garantir permissões do git e propriedade da pasta
+            sudo chown -R $USER:$USER $TARGET_DIR || true
             git config --global --add safe.directory "$TARGET_DIR" || true
             
             echo "📥 Baixando atualizações do GitHub..."
