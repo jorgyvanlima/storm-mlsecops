@@ -11,9 +11,11 @@ client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 try:
     print("Connecting to VPS...")
-    client.connect(host, port=port, username=user, password=password, timeout=10)
+    client.connect(host, port=port, username=user, password=password, timeout=25)
     
     commands = [
+        f"git config --global --add safe.directory '{target_dir}' || true",
+        f"git config --global --add safe.directory '*' || true",
         f"cd {target_dir} && git reset --hard && git pull origin main",
         f"cd {target_dir} && docker compose -f docker-compose.prod.yml build storm-backend frontend || docker-compose -f docker-compose.prod.yml build storm-backend frontend",
         f"cd {target_dir} && docker compose -f docker-compose.prod.yml up -d storm-backend frontend || docker-compose -f docker-compose.prod.yml up -d storm-backend frontend",
